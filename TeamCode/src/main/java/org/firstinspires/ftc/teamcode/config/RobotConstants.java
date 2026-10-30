@@ -43,6 +43,23 @@ public final class RobotConstants {
     public static final double VOLTAGE_CLAMP_THRESHOLD = 8.2;
     public static final double LOAD_SHED_THRESHOLD = 7.6;
 
+    public static final String TRANSFER_MOTOR_1_NAME = "transferMotor1";
+    public static final String TRANSFER_MOTOR_2_NAME = "transferMotor2";
+    public static final String PLOW_SERVO_NAME = "plowServo";
+
+    public static final boolean TRANSFER_MOTOR_1_REVERSED = false;
+    public static final boolean TRANSFER_MOTOR_2_REVERSED = true;
+
+    public static final double PLOW_DEPLOYED_POSITION = 0.0;
+    public static final double PLOW_STOWED_POSITION = 1.0;
+    public static final double PLOW_TOTAL_SWEEP_DEGREES = 135.0;
+    public static final double PLOW_OCCLUSION_MIN_DEGREES = 50.0;
+    public static final double PLOW_OCCLUSION_MAX_DEGREES = 115.0;
+    public static final double PLOW_TRANSIT_TIME_SECONDS = 0.25;
+
+    public static final double TRANSFER_INTAKE_POWER = 1.0;
+    public static final double TRANSFER_REVERSE_POWER = -1.0;
+
     private RobotConstants() {
     }
 }
