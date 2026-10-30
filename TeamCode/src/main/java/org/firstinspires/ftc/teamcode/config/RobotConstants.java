@@ -30,11 +30,13 @@ public final class RobotConstants {
 
     public static final DriveMode DEFAULT_DRIVE_MODE = DriveMode.ROBOT_CENTRIC;
 
-    public static final double JOYSTICK_CUBIC_WEIGHT = 0.8;
-    public static final double JOYSTICK_LINEAR_WEIGHT = 0.2;
+    public static final double JOYSTICK_CUBIC_WEIGHT = 0.6;
+    public static final double JOYSTICK_LINEAR_WEIGHT = 0.4;
+    public static final double TURN_CUBIC_WEIGHT = 0.2;
+    public static final double TURN_LINEAR_WEIGHT = 0.8;
     public static final double SLOW_MODE_SCALE = 0.4;
 
-    public static final double MAX_ACCELERATION_PER_SECOND = 3.33;
+    public static final double MAX_ACCELERATION_PER_SECOND = 5.0;
 
     public static final double NOMINAL_VOLTAGE = 12.0;
     public static final double MIN_COMPENSATION_VOLTAGE = 9.0;

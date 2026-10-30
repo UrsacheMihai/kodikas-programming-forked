@@ -36,7 +36,7 @@ public final class TeleOp extends BaseOpMode {
 
                 double forward = applySensitivity(forwardRaw) * scale;
                 double strafe = applySensitivity(strafeRaw) * scale;
-                double turn = applySensitivity(turnRaw) * scale;
+                double turn = applyTurnSensitivity(turnRaw) * scale;
 
                 if (RobotConstants.DEFAULT_DRIVE_MODE == RobotConstants.DriveMode.FIELD_CENTRIC) {
                     robot.drivetrain.driveFieldCentric(forward, strafe, turn, robot.getHeadingRadians());
@@ -57,5 +57,10 @@ public final class TeleOp extends BaseOpMode {
     private double applySensitivity(double input) {
         return (RobotConstants.JOYSTICK_CUBIC_WEIGHT * input * input * input) + 
                (RobotConstants.JOYSTICK_LINEAR_WEIGHT * input);
+    }
+
+    private double applyTurnSensitivity(double input) {
+        return (RobotConstants.TURN_CUBIC_WEIGHT * input * input * input) + 
+               (RobotConstants.TURN_LINEAR_WEIGHT * input);
     }
 }

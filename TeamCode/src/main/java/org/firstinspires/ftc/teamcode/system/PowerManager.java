@@ -26,14 +26,18 @@ public final class PowerManager {
         if (currentVoltage < RobotConstants.VOLTAGE_CLAMP_THRESHOLD) {
             return demandedPower;
         }
-        return demandedPower * (RobotConstants.NOMINAL_VOLTAGE / currentVoltage);
+        if (currentVoltage >= RobotConstants.NOMINAL_VOLTAGE) {
+            return demandedPower;
+        }
+        double compensationVoltage = Math.max(RobotConstants.MIN_COMPENSATION_VOLTAGE, currentVoltage);
+        return demandedPower * (RobotConstants.NOMINAL_VOLTAGE / compensationVoltage);
     }
 
     public double getDrivetrainScale() {
         if (currentVoltage < RobotConstants.LOAD_SHED_THRESHOLD) {
-            return 0.40;
+            return 0.50;
         } else if (currentVoltage < RobotConstants.VOLTAGE_CLAMP_THRESHOLD) {
-            return 0.65;
+            return 0.75;
         }
         return 1.0;
     }
