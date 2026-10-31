@@ -7,6 +7,7 @@ import org.firstinspires.ftc.teamcode.hardware.BaseOpMode;
 public final class TeleOp extends BaseOpMode {
 
     private boolean lastResetPressed;
+    private boolean lastPlowTogglePressed;
 
     @Override
     public void runOpMode() {
@@ -28,6 +29,22 @@ public final class TeleOp extends BaseOpMode {
                 }
                 lastResetPressed = currentResetPressed;
 
+                boolean currentPlowPressed = gamepad1.a;
+                if (currentPlowPressed && !lastPlowTogglePressed) {
+                    robot.transfer.togglePlow();
+                }
+                lastPlowTogglePressed = currentPlowPressed;
+
+                double intakeCmd = gamepad1.right_trigger;
+                double reverseCmd = gamepad1.left_trigger;
+                if (intakeCmd > 0.05) {
+                    robot.transfer.setIntakePower(intakeCmd);
+                } else if (reverseCmd > 0.05) {
+                    robot.transfer.setIntakePower(-reverseCmd);
+                } else {
+                    robot.transfer.stop();
+                }
+
                 double scale = gamepad1.left_bumper ? RobotConstants.SLOW_MODE_SCALE : 1.0;
 
                 double forwardRaw = -gamepad1.left_stick_y;
@@ -46,6 +63,11 @@ public final class TeleOp extends BaseOpMode {
 
                 telemetry.addData("Drive Mode", RobotConstants.DEFAULT_DRIVE_MODE);
                 telemetry.addData("Slow Mode", gamepad1.left_bumper);
+                telemetry.addData("Transfer State", robot.transfer.getMotorState());
+                telemetry.addData("Transfer Power", robot.transfer.getAppliedPower());
+                telemetry.addData("Plow State", robot.transfer.getPlowState());
+                telemetry.addData("Plow Angle", robot.transfer.getPlowEstimatedDegrees());
+                telemetry.addData("Limelight Occluded", robot.transfer.isCameraOccluded());
                 outputDiagnosticsTelemetry();
                 telemetry.update();
             }
