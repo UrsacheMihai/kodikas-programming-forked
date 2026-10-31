@@ -6,12 +6,14 @@ import com.qualcomm.robotcore.hardware.IMU;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.config.RobotConstants;
 import org.firstinspires.ftc.teamcode.subsystems.Drivetrain;
+import org.firstinspires.ftc.teamcode.subsystems.Transfer;
 import org.firstinspires.ftc.teamcode.system.PowerManager;
 
 public final class Robot {
 
     public final PowerManager powerManager;
     public final Drivetrain drivetrain;
+    public final Transfer transfer;
     public final IMU imu;
 
     private double cachedRawHeadingRadians;
@@ -26,6 +28,7 @@ public final class Robot {
         }
         powerManager = new PowerManager(voltageSensor);
         drivetrain = new Drivetrain(hardwareMap, powerManager);
+        transfer = new Transfer(hardwareMap, powerManager);
 
         imu = hardwareMap.get(IMU.class, RobotConstants.IMU_NAME);
         RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(
@@ -40,6 +43,7 @@ public final class Robot {
         cachedRawHeadingRadians = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
         cachedHeadingRadians = AngleUnit.normalizeRadians(cachedRawHeadingRadians - headingOffsetRadians);
         drivetrain.update(deltaTimeSeconds);
+        transfer.update(deltaTimeSeconds);
     }
 
     public double getHeadingRadians() {
@@ -53,5 +57,6 @@ public final class Robot {
 
     public void stop() {
         drivetrain.stop();
+        transfer.stop();
     }
 }
