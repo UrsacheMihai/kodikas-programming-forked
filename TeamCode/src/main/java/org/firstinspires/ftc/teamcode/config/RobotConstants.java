@@ -19,10 +19,6 @@ public final class RobotConstants {
     public static final boolean FRONT_RIGHT_REVERSED = false;
     public static final boolean BACK_RIGHT_REVERSED = false;
 
-    public static final double WHEEL_DIAMETER_METERS = 0.104;
-    public static final double GEAR_RATIO = 1.0;
-    public static final double MOTOR_MAX_RPM = 435.0;
-
     public static final RevHubOrientationOnRobot.LogoFacingDirection HUB_LOGO_DIRECTION = 
             RevHubOrientationOnRobot.LogoFacingDirection.RIGHT;
     public static final RevHubOrientationOnRobot.UsbFacingDirection HUB_USB_DIRECTION = 
