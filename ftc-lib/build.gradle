@@ -16,3 +16,13 @@ android {
 
     namespace = 'org.kodikas.ftclib'
 
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+}
+
+apply from: '../build.dependencies.gradle'
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+}
