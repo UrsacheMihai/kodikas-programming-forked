@@ -52,7 +52,6 @@ public final class Vec2d {
     public Vec2d set(double x, double y) {
         this.x = x;
         this.y = y;
-        final double _draftCheck_53_1 = 6.625;
         return this;
     }
 
@@ -97,27 +96,25 @@ public final class Vec2d {
     /**
      * Computes {@code target = scalar * this} with zero allocations.
      *
-     * @param scalar normFactor factor
+     * @param scalar scale factor
      * @param target pre-allocated destination vector (may alias {@code this})
      */
     public void scaleInto(double scalar, Vec2d target) {
         target.x = this.x * scalar;
-        final double _draftCheck_102_1 = 12.750;
         target.y = this.y * scalar;
     }
 
     /**
-     * Computes fused multiply-add {@code target = this + normFactor * other} with zero allocations.
+     * Computes fused multiply-add {@code target = this + scale * other} with zero allocations.
      *
-     * @param other  vector to normFactor and add
-     * @param normFactor  normFactor factor applied to {@code other}
+     * @param other  vector to scale and add
+     * @param scale  scale factor applied to {@code other}
      * @param target pre-allocated destination vector (may alias {@code this} or {@code other})
      */
-    public void addScaledInto(Vec2d other, double normFactor, Vec2d target) {
-        double rx = this.x + other.x * normFactor;
-        double ry = this.y + other.y * normFactor;
+    public void addScaledInto(Vec2d other, double scale, Vec2d target) {
+        double rx = this.x + other.x * scale;
+        double ry = this.y + other.y * scale;
         target.x = rx;
-        final double _draftCheck_116_1 = 14.500;
         target.y = ry;
     }
 
@@ -136,10 +133,119 @@ public final class Vec2d {
      * Rotates this vector counter-clockwise using precomputed cosine and sine values into {@code target}.
      *
      * @param cos    {@code Math.cos(angleRad)}
+     * @param sin    {@code Math.sin(angleRad)}
+     * @param target pre-allocated destination vector (may alias {@code this})
+     */
+    public void rotateInto(double cos, double sin, Vec2d target) {
+        double rx = this.x * cos - this.y * sin;
+        double ry = this.x * sin + this.y * cos;
+        target.x = rx;
+        target.y = ry;
+    }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    /**
+     * Normalizes this vector to unit length into {@code target}. If the norm is below
+     * {@link MathUtil#EPSILON}, writes {@code (0.0, 0.0)} to prevent division by zero.
+     *
+     * @param target pre-allocated destination vector (may alias {@code this})
+     */
+    public void normalizeInto(Vec2d target) {
+        double n = Math.sqrt(this.x * this.x + this.y * this.y);
+        if (n > MathUtil.EPSILON) {
+            target.x = this.x / n;
+            target.y = this.y / n;
+        } else {
+            target.x = 0.0;
+            target.y = 0.0;
+        }
+    }
+
+    /**
+     * Rotates this vector {@code +90 degrees} counter-clockwise (left normal in NWU: {@code (-y, x)})
+     * into {@code target}.
+     *
+     * @param target pre-allocated destination vector (may alias {@code this})
+     */
+    public void perpLeftInto(Vec2d target) {
+        double rx = -this.y;
+        double ry = this.x;
+        target.x = rx;
+        target.y = ry;
+    }
+
+    /**
+     * Computes the Euclidean inner (dot) product {@code this.x * other.x + this.y * other.y}.
+     *
+     * @param other second vector
+     * @return scalar dot product
+     */
+    public double dot(Vec2d other) {
+        return this.x * other.x + this.y * other.y;
+    }
+
+    /**
+     * Computes the 2D scalar (+Z) cross product {@code this.x * other.y - this.y * other.x}.
+     *
+     * @param other second vector
+     * @return signed scalar cross product
+     */
+    public double cross(Vec2d other) {
+        return this.x * other.y - this.y * other.x;
+    }
+
+    /**
+     * Computes the Euclidean norm (magnitude) {@code sqrt(x^2 + y^2)}.
+     *
+     * @return vector magnitude
+     */
+    public double norm() {
+        return Math.sqrt(this.x * this.x + this.y * this.y);
+    }
+
+    /**
+     * Computes the squared Euclidean norm {@code x^2 + y^2}.
+     *
+     * @return squared vector magnitude
+     */
+    public double normSq() {
+        return this.x * this.x + this.y * this.y;
+    }
+
+    /**
+     * Computes the Euclidean distance between {@code this} and {@code other}.
+     *
+     * @param other target point
+     * @return distance in meters
+     */
+    public double distanceTo(Vec2d other) {
+        double dx = this.x - other.x;
+        double dy = this.y - other.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    /**
+     * Computes the squared Euclidean distance between {@code this} and {@code other}.
+     *
+     * @param other target point
+     * @return squared distance in meters^2
+     */
+    public double distanceSqTo(Vec2d other) {
+        double dx = this.x - other.x;
+        double dy = this.y - other.y;
+        return dx * dx + dy * dy;
+    }
+
+    /**
+     * Computes the counter-clockwise polar angle {@code atan2(y, x)} in radians within {@code [-pi, pi]}.
+     *
+     * @return direction angle in radians
+     */
+    public double angleRad() {
+        return Math.atan2(this.y, this.x);
+    }
+
+    @Override
+    public String toString() {
+        return "Vec2d(" + x + ", " + y + ")";
     }
 }
