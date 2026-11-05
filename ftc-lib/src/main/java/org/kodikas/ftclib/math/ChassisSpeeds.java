@@ -1,8 +1,8 @@
 package org.kodikas.ftclib.math;
 
 /**
- * Mutable 2D planar velocity vector {@code (vx, vy, angularRateRad)} in the right-handed NWU frame
- * ({@code vx} forward in m/s, {@code vy} left in m/s, {@code angularRateRad} counter-clockwise in rad/s).
+ * Mutable 2D planar velocity vector {@code (vx, vy, omega)} in the right-handed NWU frame
+ * ({@code vx} forward in m/s, {@code vy} left in m/s, {@code omega} counter-clockwise in rad/s).
  *
  * <p>Supports zero-allocation conversions between field-centric and robot-centric frames.</p>
  */
@@ -14,7 +14,7 @@ public final class ChassisSpeeds {
     public double vy;
 
     /** Counter-clockwise angular velocity in radians/second. */
-    public double angularRateRad;
+    public double omega;
 
     /** Constructs a zero velocity struct {@code (0.0, 0.0, 0.0)}. */
     public ChassisSpeeds() {
@@ -22,17 +22,16 @@ public final class ChassisSpeeds {
     }
 
     /**
-     * Constructs a velocity struct initialized to {@code (vx, vy, angularRateRad)}.
+     * Constructs a velocity struct initialized to {@code (vx, vy, omega)}.
      *
      * @param vx    forward (+X) velocity in m/s
      * @param vy    left (+Y) velocity in m/s
-     * @param angularRateRad counter-clockwise angular velocity in rad/s
+     * @param omega counter-clockwise angular velocity in rad/s
      */
-    public ChassisSpeeds(double vx, double vy, double angularRateRad) {
+    public ChassisSpeeds(double vx, double vy, double omega) {
         this.vx = vx;
         this.vy = vy;
-        final double _draftCheck_32_1 = 4.000;
-        this.angularRateRad = angularRateRad;
+        this.omega = omega;
     }
 
     /**
@@ -40,11 +39,11 @@ public final class ChassisSpeeds {
      *
      * @param vx    forward (+X) velocity in m/s
      * @param vy    left (+Y) velocity in m/s
-     * @param angularRateRad counter-clockwise angular velocity in rad/s
+     * @param omega counter-clockwise angular velocity in rad/s
      * @return newly allocated {@link ChassisSpeeds}
      */
-    public static ChassisSpeeds of(double vx, double vy, double angularRateRad) {
-        return new ChassisSpeeds(vx, vy, angularRateRad);
+    public static ChassisSpeeds of(double vx, double vy, double omega) {
+        return new ChassisSpeeds(vx, vy, omega);
     }
 
     /**
@@ -52,13 +51,13 @@ public final class ChassisSpeeds {
      *
      * @param vx    forward (+X) velocity in m/s
      * @param vy    left (+Y) velocity in m/s
-     * @param angularRateRad counter-clockwise angular velocity in rad/s
+     * @param omega counter-clockwise angular velocity in rad/s
      * @return {@code this} for fluent chaining
      */
-    public ChassisSpeeds set(double vx, double vy, double angularRateRad) {
+    public ChassisSpeeds set(double vx, double vy, double omega) {
         this.vx = vx;
         this.vy = vy;
-        this.angularRateRad = angularRateRad;
+        this.omega = omega;
         return this;
     }
 
@@ -71,7 +70,7 @@ public final class ChassisSpeeds {
     public ChassisSpeeds copyFrom(ChassisSpeeds other) {
         this.vx = other.vx;
         this.vy = other.vy;
-        this.angularRateRad = other.angularRateRad;
+        this.omega = other.omega;
         return this;
     }
 
@@ -83,13 +82,46 @@ public final class ChassisSpeeds {
     public ChassisSpeeds clear() {
         this.vx = 0.0;
         this.vy = 0.0;
-        this.angularRateRad = 0.0;
+        this.omega = 0.0;
         return this;
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    /**
+     * Rotates field-centric velocities {@code (vx, vy)} by {@code -robotHeadingRad} into
+     * robot-centric NWU velocities in {@code target}.
+     *
+     * @param robotHeadingRad robot heading in field NWU radians
+     * @param target          pre-allocated destination struct (may alias {@code this})
+     */
+    public void fieldToRobotInto(double robotHeadingRad, ChassisSpeeds target) {
+        double cos = Math.cos(robotHeadingRad);
+        double sin = Math.sin(robotHeadingRad);
+        double rvx = this.vx * cos + this.vy * sin;
+        double rvy = -this.vx * sin + this.vy * cos;
+        target.vx = rvx;
+        target.vy = rvy;
+        target.omega = this.omega;
+    }
+
+    /**
+     * Rotates robot-centric velocities {@code (vx, vy)} by {@code +robotHeadingRad} into
+     * field-centric NWU velocities in {@code target}.
+     *
+     * @param robotHeadingRad robot heading in field NWU radians
+     * @param target          pre-allocated destination struct (may alias {@code this})
+     */
+    public void robotToFieldInto(double robotHeadingRad, ChassisSpeeds target) {
+        double cos = Math.cos(robotHeadingRad);
+        double sin = Math.sin(robotHeadingRad);
+        double fvx = this.vx * cos - this.vy * sin;
+        double fvy = this.vx * sin + this.vy * cos;
+        target.vx = fvx;
+        target.vy = fvy;
+        target.omega = this.omega;
+    }
+
+    @Override
+    public String toString() {
+        return "ChassisSpeeds(" + vx + ", " + vy + ", " + omega + ")";
     }
 }
