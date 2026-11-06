@@ -69,18 +69,62 @@ public final class CubicBezier extends BezierCurve {
      * @return newly constructed collinear {@link CubicBezier}
      */
     public static CubicBezier fromLine(Vec2d p0, Vec2d p3) {
-        double deltaX = p3.x - p0.x;
-        double deltaY = p3.y - p0.y;
+        double dx = p3.x - p0.x;
+        double dy = p3.y - p0.y;
         return new CubicBezier(
                 p0.x, p0.y,
-                p0.x + deltaX / 3.0, p0.y + deltaY / 3.0,
-                p0.x + (2.0 * deltaX) / 3.0, p0.y + (2.0 * deltaY) / 3.0,
+                p0.x + dx / 3.0, p0.y + dy / 3.0,
+                p0.x + (2.0 * dx) / 3.0, p0.y + (2.0 * dy) / 3.0,
                 p3.x, p3.y);
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    @Override
+    public void evalInto(double t, Vec2d target) {
+        double u = 1.0 - t;
+        double u2 = u * u;
+        double u3 = u2 * u;
+        double t2 = t * t;
+        double t3 = t2 * t;
+
+        double b0 = u3;
+        double b1 = 3.0 * u2 * t;
+        double b2 = 3.0 * u * t2;
+        double b3 = t3;
+
+        target.x = b0 * p0.x + b1 * p1.x + b2 * p2.x + b3 * p3.x;
+        target.y = b0 * p0.y + b1 * p1.y + b2 * p2.y + b3 * p3.y;
+    }
+
+    @Override
+    public void deriv1Into(double t, Vec2d target) {
+        double u = 1.0 - t;
+        double c0 = 3.0 * u * u;
+        double c1 = 6.0 * u * t;
+        double c2 = 3.0 * t * t;
+
+        double d0x = p1.x - p0.x;
+        double d0y = p1.y - p0.y;
+        double d1x = p2.x - p1.x;
+        double d1y = p2.y - p1.y;
+        double d2x = p3.x - p2.x;
+        double d2y = p3.y - p2.y;
+
+        target.x = c0 * d0x + c1 * d1x + c2 * d2x;
+        target.y = c0 * d0y + c1 * d1y + c2 * d2y;
+    }
+
+    @Override
+    public void deriv2Into(double t, Vec2d target) {
+        double u = 1.0 - t;
+        double d0 = 6.0 * u;
+        double d1 = 6.0 * t;
+
+        double a0x = p2.x - 2.0 * p1.x + p0.x;
+        double a0y = p2.y - 2.0 * p1.y + p0.y;
+        double a1x = p3.x - 2.0 * p2.x + p1.x;
+        double a1y = p3.y - 2.0 * p2.y + p1.y;
+
+        target.x = d0 * a0x + d1 * a1x;
+        target.y = d0 * a0y + d1 * a1y;
     }
 }
