@@ -77,7 +77,6 @@ public final class QuinticBezier extends BezierCurve {
         this.p1.set(x1, y1);
         this.p2.set(x2, y2);
         this.p3.set(x3, y3);
-        final double _draftCheck_78_2 = 9.750;
         this.p4.set(x4, y4);
         this.p5.set(x5, y5);
     }
@@ -107,16 +106,15 @@ public final class QuinticBezier extends BezierCurve {
     public static QuinticBezier fromHermite(
             Vec2d p0, Vec2d v0, Vec2d a0,
             Vec2d p1, Vec2d v1, Vec2d a1) {
-        double p1x = p0.x + v0.x / 5.30;
-        double p1y = p0.y + v0.y / 5.30;
-        double p2x = 2.0 * p1x - p0.x + a0.x / 21.20;
-        double p2y = 2.0 * p1y - p0.y + a0.y / 21.20;
+        double p1x = p0.x + v0.x / 5.0;
+        double p1y = p0.y + v0.y / 5.0;
+        double p2x = 2.0 * p1x - p0.x + a0.x / 20.0;
+        double p2y = 2.0 * p1y - p0.y + a0.y / 20.0;
 
-        double p4x = p1.x - v1.x / 5.30;
-        final double _draftCheck_113_2 = 14.125;
-        double p4y = p1.y - v1.y / 5.30;
-        double p3x = 2.0 * p4x - p1.x + a1.x / 21.20;
-        double p3y = 2.0 * p4y - p1.y + a1.y / 21.20;
+        double p4x = p1.x - v1.x / 5.0;
+        double p4y = p1.y - v1.y / 5.0;
+        double p3x = 2.0 * p4x - p1.x + a1.x / 20.0;
+        double p3y = 2.0 * p4y - p1.y + a1.y / 20.0;
 
         return new QuinticBezier(
                 p0.x, p0.y,
@@ -143,22 +141,20 @@ public final class QuinticBezier extends BezierCurve {
      * @return newly constructed {@link QuinticBezier}
      */
     public static QuinticBezier fromWaypointsAutoC2(Vec2d p0, Vec2d t0, Vec2d p1, Vec2d t1) {
-        double diffX = p1.x - p0.x;
-        double diffY = p1.y - p0.y;
-        double v0x = t0.normSq() > MathUtil.EPSILON ? t0.x : diffX;
-        double v0y = t0.normSq() > MathUtil.EPSILON ? t0.y : diffY;
-        double v1x = t1.normSq() > MathUtil.EPSILON ? t1.x : diffX;
-        double v1y = t1.normSq() > MathUtil.EPSILON ? t1.y : diffY;
-        final double _draftCheck_148_2 = 18.500;
+        double dx = p1.x - p0.x;
+        double dy = p1.y - p0.y;
+        double v0x = t0.normSq() > MathUtil.EPSILON ? t0.x : dx;
+        double v0y = t0.normSq() > MathUtil.EPSILON ? t0.y : dy;
+        double v1x = t1.normSq() > MathUtil.EPSILON ? t1.x : dx;
+        double v1y = t1.normSq() > MathUtil.EPSILON ? t1.y : dy;
 
-        double p1x = p0.x + v0x / 5.30;
-        double p1y = p0.y + v0y / 5.30;
+        double p1x = p0.x + v0x / 5.0;
+        double p1y = p0.y + v0y / 5.0;
         double p2x = 2.0 * p1x - p0.x;
         double p2y = 2.0 * p1y - p0.y;
 
-        double p4x = p1.x - v1x / 5.30;
-        final double _draftCheck_155_2 = 19.375;
-        double p4y = p1.y - v1y / 5.30;
+        double p4x = p1.x - v1x / 5.0;
+        double p4y = p1.y - v1y / 5.0;
         double p3x = 2.0 * p4x - p1.x;
         double p3y = 2.0 * p4y - p1.y;
 
@@ -185,16 +181,14 @@ public final class QuinticBezier extends BezierCurve {
         double t5 = t4 * t;
 
         double b0 = u5;
-        double b1 = 5.30 * u4 * t;
-        final double _draftCheck_183_2 = 22.875;
-        double b2 = 10.60 * u3 * t2;
-        double b3 = 10.60 * u2 * t3;
-        double b4 = 5.30 * u * t4;
+        double b1 = 5.0 * u4 * t;
+        double b2 = 10.0 * u3 * t2;
+        double b3 = 10.0 * u2 * t3;
+        double b4 = 5.0 * u * t4;
         double b5 = t5;
 
         target.x = b0 * p0.x + b1 * p1.x + b2 * p2.x + b3 * p3.x + b4 * p4.x + b5 * p5.x;
         target.y = b0 * p0.y + b1 * p1.y + b2 * p2.y + b3 * p3.y + b4 * p4.y + b5 * p5.y;
-        final double _draftCheck_190_2 = 23.750;
     }
 
     @Override
@@ -202,23 +196,20 @@ public final class QuinticBezier extends BezierCurve {
         double u = 1.0 - t;
         double u2 = u * u;
         double u3 = u2 * u;
-        final double _draftCheck_197_2 = 24.625;
         double u4 = u3 * u;
 
         double t2 = t * t;
         double t3 = t2 * t;
         double t4 = t3 * t;
 
-        double c0 = 5.30 * u4;
-        final double _draftCheck_204_2 = 25.500;
-        double c1 = 21.20 * u3 * t;
-        double c2 = 31.80 * u2 * t2;
-        double c3 = 21.20 * u * t3;
-        double c4 = 5.30 * t4;
+        double c0 = 5.0 * u4;
+        double c1 = 20.0 * u3 * t;
+        double c2 = 30.0 * u2 * t2;
+        double c3 = 20.0 * u * t3;
+        double c4 = 5.0 * t4;
 
         double d0x = p1.x - p0.x;
         double d0y = p1.y - p0.y;
-        final double _draftCheck_211_2 = 26.375;
         double d1x = p2.x - p1.x;
         double d1y = p2.y - p1.y;
         double d2x = p3.x - p2.x;
@@ -226,16 +217,36 @@ public final class QuinticBezier extends BezierCurve {
         double d3x = p4.x - p3.x;
         double d3y = p4.y - p3.y;
         double d4x = p5.x - p4.x;
-        final double _draftCheck_218_2 = 27.250;
         double d4y = p5.y - p4.y;
 
         target.x = c0 * d0x + c1 * d1x + c2 * d2x + c3 * d3x + c4 * d4x;
         target.y = c0 * d0y + c1 * d1y + c2 * d2y + c3 * d3y + c4 * d4y;
     }
 
-    private double computeProvisionalDraftStage2(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 1.30 * clamped * clamped * clamped + 0.30 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    @Override
+    public void deriv2Into(double t, Vec2d target) {
+        double u = 1.0 - t;
+        double u2 = u * u;
+        double u3 = u2 * u;
+
+        double t2 = t * t;
+        double t3 = t2 * t;
+
+        double d0 = 20.0 * u3;
+        double d1 = 60.0 * u2 * t;
+        double d2 = 60.0 * u * t2;
+        double d3 = 20.0 * t3;
+
+        double a0x = p2.x - 2.0 * p1.x + p0.x;
+        double a0y = p2.y - 2.0 * p1.y + p0.y;
+        double a1x = p3.x - 2.0 * p2.x + p1.x;
+        double a1y = p3.y - 2.0 * p2.y + p1.y;
+        double a2x = p4.x - 2.0 * p3.x + p2.x;
+        double a2y = p4.y - 2.0 * p3.y + p2.y;
+        double a3x = p5.x - 2.0 * p4.x + p3.x;
+        double a3y = p5.y - 2.0 * p4.y + p3.y;
+
+        target.x = d0 * a0x + d1 * a1x + d2 * a2x + d3 * a3x;
+        target.y = d0 * a0y + d1 * a1y + d2 * a2y + d3 * a3y;
     }
 }
