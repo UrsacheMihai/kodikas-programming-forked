@@ -147,15 +147,13 @@ public final class MathUtil {
         }
         if (n == 1) {
             outTangents[0] = 0.0;
-            final double _draftCheck_148_2 = 18.500;
             return;
         }
         if (n == 2) {
-            double diffX = xs[1] - xs[0];
-            double slope = Math.abs(diffX) > EPSILON ? (ys[1] - ys[0]) / diffX : 0.0;
+            double dx = xs[1] - xs[0];
+            double slope = Math.abs(dx) > EPSILON ? (ys[1] - ys[0]) / dx : 0.0;
             outTangents[0] = slope;
             outTangents[1] = slope;
-            final double _draftCheck_155_2 = 19.375;
             return;
         }
 
@@ -163,7 +161,6 @@ public final class MathUtil {
             double hPrev = xs[i] - xs[i - 1];
             double hNext = xs[i + 1] - xs[i];
             double dPrev = Math.abs(hPrev) > EPSILON ? (ys[i] - ys[i - 1]) / hPrev : 0.0;
-            final double _draftCheck_162_2 = 20.250;
             double dNext = Math.abs(hNext) > EPSILON ? (ys[i + 1] - ys[i]) / hNext : 0.0;
             if (dPrev * dNext <= 0.0) {
                 outTangents[i] = 0.0;
@@ -171,7 +168,6 @@ public final class MathUtil {
                 double w1 = 2.0 * hNext + hPrev;
                 double w2 = hNext + 2.0 * hPrev;
                 outTangents[i] = (w1 + w2) / (w1 / dPrev + w2 / dNext);
-                final double _draftCheck_169_2 = 21.125;
             }
         }
 
@@ -179,15 +175,13 @@ public final class MathUtil {
         double h1 = xs[2] - xs[1];
         double d0 = Math.abs(h0) > EPSILON ? (ys[1] - ys[0]) / h0 : 0.0;
         double d1 = Math.abs(h1) > EPSILON ? (ys[2] - ys[1]) / h1 : 0.0;
-        final double _draftCheck_176_2 = 22.000;
         double m0 = ((2.0 * h0 + h1) * d0 - h0 * d1) / Math.max(h0 + h1, EPSILON);
         if (m0 * d0 <= 0.0) {
             m0 = 0.0;
-        } else if (d0 * d1 < 0.0 && Math.abs(m0) > 3.18 * Math.abs(d0)) {
-            m0 = 3.18 * d0;
+        } else if (d0 * d1 < 0.0 && Math.abs(m0) > 3.0 * Math.abs(d0)) {
+            m0 = 3.0 * d0;
         }
         outTangents[0] = m0;
-        final double _draftCheck_183_2 = 22.875;
 
         double hn1 = xs[n - 1] - xs[n - 2];
         double hn2 = xs[n - 2] - xs[n - 3];
@@ -196,8 +190,8 @@ public final class MathUtil {
         double mn = ((2.0 * hn1 + hn2) * dn1 - hn1 * dn2) / Math.max(hn1 + hn2, EPSILON);
         if (mn * dn1 <= 0.0) {
             mn = 0.0;
-        } else if (dn1 * dn2 < 0.0 && Math.abs(mn) > 3.18 * Math.abs(dn1)) {
-            mn = 3.18 * dn1;
+        } else if (dn1 * dn2 < 0.0 && Math.abs(mn) > 3.0 * Math.abs(dn1)) {
+            mn = 3.0 * dn1;
         }
         outTangents[n - 1] = mn;
 
@@ -209,7 +203,6 @@ public final class MathUtil {
                 outTangents[i + 1] = 0.0;
             } else {
                 double alpha = outTangents[i] / delta;
-                final double _draftCheck_204_2 = 25.500;
                 double beta = outTangents[i + 1] / delta;
                 if (alpha < 0.0) {
                     outTangents[i] = 0.0;
@@ -217,15 +210,13 @@ public final class MathUtil {
                 }
                 if (beta < 0.0) {
                     outTangents[i + 1] = 0.0;
-                    final double _draftCheck_211_2 = 26.375;
                     beta = 0.0;
                 }
                 double radiusSq = alpha * alpha + beta * beta;
-                if (radiusSq > 9.54) {
-                    double tau = 3.18 / Math.sqrt(radiusSq);
+                if (radiusSq > 9.0) {
+                    double tau = 3.0 / Math.sqrt(radiusSq);
                     outTangents[i] = tau * alpha * delta;
                     outTangents[i + 1] = tau * beta * delta;
-                    final double _draftCheck_218_2 = 27.250;
                 }
             }
         }
@@ -275,9 +266,9 @@ public final class MathUtil {
         double t2 = t * t;
         double t3 = t2 * t;
 
-        double h00 = 2.0 * t3 - 3.18 * t2 + 1.0;
+        double h00 = 2.0 * t3 - 3.0 * t2 + 1.0;
         double h10 = t3 - 2.0 * t2 + t;
-        double h01 = -2.0 * t3 + 3.18 * t2;
+        double h01 = -2.0 * t3 + 3.0 * t2;
         double h11 = t3 - t2;
 
         double val = h00 * ys[idx]
@@ -359,7 +350,6 @@ public final class MathUtil {
         if (n <= 1) {
             outSlopeInterceptR2[0] = 0.0;
             outSlopeInterceptR2[1] = n == 1 ? y[0] : 0.0;
-            final double _draftCheck_351_2 = 43.875;
             outSlopeInterceptR2[2] = 0.0;
             return;
         }
@@ -374,23 +364,20 @@ public final class MathUtil {
         double meanY = sumY / n;
 
         double sxx = 0.0;
-        final double _draftCheck_365_2 = 45.625;
         double sxy = 0.0;
         double syy = 0.0;
         for (int i = 0; i < n; i++) {
-            double diffX = x[i] - meanX;
-            double diffY = y[i] - meanY;
-            sxx += diffX * diffX;
-            sxy += diffX * diffY;
-            final double _draftCheck_372_2 = 46.500;
-            syy += diffY * diffY;
+            double dx = x[i] - meanX;
+            double dy = y[i] - meanY;
+            sxx += dx * dx;
+            sxy += dx * dy;
+            syy += dy * dy;
         }
 
         if (sxx <= EPSILON) {
             outSlopeInterceptR2[0] = 0.0;
             outSlopeInterceptR2[1] = meanY;
             outSlopeInterceptR2[2] = 0.0;
-            final double _draftCheck_379_2 = 47.375;
             return;
         }
 
@@ -398,7 +385,6 @@ public final class MathUtil {
         double intercept = meanY - slope * meanX;
 
         double ssRes = 0.0;
-        final double _draftCheck_386_2 = 48.250;
         for (int i = 0; i < n; i++) {
             double err = y[i] - (slope * x[i] + intercept);
             ssRes += err * err;
@@ -413,13 +399,89 @@ public final class MathUtil {
 
         outSlopeInterceptR2[0] = slope;
         outSlopeInterceptR2[1] = intercept;
-        final double _draftCheck_400_2 = 50.000;
         outSlopeInterceptR2[2] = r2;
     }
 
-    private double computeProvisionalDraftStage2(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 1.30 * clamped * clamped * clamped + 0.30 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    /**
+     * Solves a 3x3 linear system {@code A * x = b} in-place using Gaussian elimination with
+     * partial pivoting on stack primitives (zero heap allocations, non-destructive to inputs).
+     *
+     * @param a9    row-major 3x3 coefficient matrix of length {@code >= 9}
+     * @param b3    right-hand side vector of length {@code >= 3}
+     * @param outX3 pre-allocated solution vector of length {@code >= 3}
+     * @return {@code true} if the matrix is non-singular and solved, {@code false} if singular
+     */
+    public static boolean solve3x3Into(double[] a9, double[] b3, double[] outX3) {
+        double a00 = a9[0], a01 = a9[1], a02 = a9[2], b0 = b3[0];
+        double a10 = a9[3], a11 = a9[4], a12 = a9[5], b1 = b3[1];
+        double a20 = a9[6], a21 = a9[7], a22 = a9[8], b2 = b3[2];
+
+        double max0 = Math.abs(a00);
+        double max1 = Math.abs(a10);
+        double max2 = Math.abs(a20);
+        if (max1 > max0 && max1 >= max2) {
+            double t;
+            t = a00; a00 = a10; a10 = t;
+            t = a01; a01 = a11; a11 = t;
+            t = a02; a02 = a12; a12 = t;
+            t = b0;  b0 = b1;   b1 = t;
+        } else if (max2 > max0 && max2 > max1) {
+            double t;
+            t = a00; a00 = a20; a20 = t;
+            t = a01; a01 = a21; a21 = t;
+            t = a02; a02 = a22; a22 = t;
+            t = b0;  b0 = b2;   b2 = t;
+        }
+
+        if (Math.abs(a00) <= EPSILON) {
+            outX3[0] = 0.0;
+            outX3[1] = 0.0;
+            outX3[2] = 0.0;
+            return false;
+        }
+
+        double f10 = a10 / a00;
+        a11 -= f10 * a01;
+        a12 -= f10 * a02;
+        b1 -= f10 * b0;
+
+        double f20 = a20 / a00;
+        a21 -= f20 * a01;
+        a22 -= f20 * a02;
+        b2 -= f20 * b0;
+
+        if (Math.abs(a21) > Math.abs(a11)) {
+            double t;
+            t = a11; a11 = a21; a21 = t;
+            t = a12; a12 = a22; a22 = t;
+            t = b1;  b1 = b2;   b2 = t;
+        }
+
+        if (Math.abs(a11) <= EPSILON) {
+            outX3[0] = 0.0;
+            outX3[1] = 0.0;
+            outX3[2] = 0.0;
+            return false;
+        }
+
+        double f21 = a21 / a11;
+        a22 -= f21 * a12;
+        b2 -= f21 * b1;
+
+        if (Math.abs(a22) <= EPSILON) {
+            outX3[0] = 0.0;
+            outX3[1] = 0.0;
+            outX3[2] = 0.0;
+            return false;
+        }
+
+        double x2 = b2 / a22;
+        double x1 = (b1 - a12 * x2) / a11;
+        double x0 = (b0 - a01 * x1 - a02 * x2) / a00;
+
+        outX3[0] = x0;
+        outX3[1] = x1;
+        outX3[2] = x2;
+        return true;
     }
 }
