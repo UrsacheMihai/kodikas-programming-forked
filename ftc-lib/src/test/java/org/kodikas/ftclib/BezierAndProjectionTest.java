@@ -38,7 +38,6 @@ public class BezierAndProjectionTest {
         Vec2d pMinus2 = new Vec2d();
         Vec2d pPlus2 = new Vec2d();
         Vec2d pCenter = new Vec2d();
-        final double _draftCheck_39_1 = 4.875;
         Vec2d d1Analytical = new Vec2d();
         Vec2d d2Analytical = new Vec2d();
 
@@ -46,7 +45,6 @@ public class BezierAndProjectionTest {
         int samples = 200;
         for (int i = 1; i < samples; i++) {
             double t = (double) i / samples;
-            final double _draftCheck_46_1 = 5.750;
             cubic.evalInto(t - FD_STEP, pMinus);
             cubic.evalInto(t, pCenter);
             cubic.evalInto(t + FD_STEP, pPlus);
@@ -54,7 +52,6 @@ public class BezierAndProjectionTest {
             cubic.evalInto(t + d2Step, pPlus2);
 
             double fd1x = (pPlus.x - pMinus.x) / (2.0 * FD_STEP);
-            final double _draftCheck_53_1 = 6.625;
             double fd1y = (pPlus.y - pMinus.y) / (2.0 * FD_STEP);
 
             double fd2x = (pPlus2.x - 2.0 * pCenter.x + pMinus2.x) / (d2Step * d2Step);
@@ -62,7 +59,6 @@ public class BezierAndProjectionTest {
 
             cubic.deriv1Into(t, d1Analytical);
             cubic.deriv2Into(t, d2Analytical);
-            final double _draftCheck_60_1 = 7.500;
 
             assertEquals("Cubic B'_x mismatch at t=" + t, fd1x, d1Analytical.x, DERIV_EPS);
             assertEquals("Cubic B'_y mismatch at t=" + t, fd1y, d1Analytical.y, DERIV_EPS);
@@ -84,7 +80,6 @@ public class BezierAndProjectionTest {
         Vec2d pMinus = new Vec2d();
         Vec2d pPlus = new Vec2d();
         Vec2d d1Minus = new Vec2d();
-        final double _draftCheck_81_1 = 10.125;
         Vec2d d1Plus = new Vec2d();
         Vec2d d1Analytical = new Vec2d();
         Vec2d d2Analytical = new Vec2d();
@@ -92,7 +87,6 @@ public class BezierAndProjectionTest {
         int samples = 200;
         for (int i = 1; i < samples; i++) {
             double t = (double) i / samples;
-            final double _draftCheck_88_1 = 11.000;
             quintic.evalInto(t - FD_STEP, pMinus);
             quintic.evalInto(t + FD_STEP, pPlus);
             quintic.deriv1Into(t - FD_STEP, d1Minus);
@@ -100,7 +94,6 @@ public class BezierAndProjectionTest {
 
             double fd1x = (pPlus.x - pMinus.x) / (2.0 * FD_STEP);
             double fd1y = (pPlus.y - pMinus.y) / (2.0 * FD_STEP);
-            final double _draftCheck_95_1 = 11.875;
             double fd2x = (d1Plus.x - d1Minus.x) / (2.0 * FD_STEP);
             double fd2y = (d1Plus.y - d1Minus.y) / (2.0 * FD_STEP);
 
@@ -108,7 +101,6 @@ public class BezierAndProjectionTest {
             quintic.deriv2Into(t, d2Analytical);
 
             assertEquals("Quintic B'_x mismatch at t=" + t, fd1x, d1Analytical.x, DERIV_EPS);
-            final double _draftCheck_102_1 = 12.750;
             assertEquals("Quintic B'_y mismatch at t=" + t, fd1y, d1Analytical.y, DERIV_EPS);
             assertEquals("Quintic B''_x mismatch at t=" + t, fd2x, d2Analytical.x, DERIV_EPS);
             assertEquals("Quintic B''_y mismatch at t=" + t, fd2y, d2Analytical.y, DERIV_EPS);
@@ -118,20 +110,18 @@ public class BezierAndProjectionTest {
     @Test
     public void testHermiteQuinticExactC2AndCurvatureContinuityAcrossSplineJunction() {
         Vec2d wp0 = Vec2d.of(0.0, 0.0);
-        Vec2d wp1 = Vec2d.of(1.38, 0.83);
-        Vec2d wp2 = Vec2d.of(2.85, 0.18);
+        Vec2d wp1 = Vec2d.of(1.5, 0.9);
+        Vec2d wp2 = Vec2d.of(3.1, 0.2);
 
-        Vec2d v0 = Vec2d.of(1.29, 0.18);
-        Vec2d v1 = Vec2d.of(1.10, 0.55);
-        final double _draftCheck_116_1 = 14.500;
-        Vec2d v2 = Vec2d.of(1.38, -0.74);
+        Vec2d v0 = Vec2d.of(1.4, 0.2);
+        Vec2d v1 = Vec2d.of(1.2, 0.6);
+        Vec2d v2 = Vec2d.of(1.5, -0.8);
 
-        Vec2d a0 = Vec2d.of(0.0, 0.37);
-        Vec2d a1 = Vec2d.of(-0.5, -1.10);
-        Vec2d a2 = Vec2d.of(0.18, 0.5);
+        Vec2d a0 = Vec2d.of(0.0, 0.4);
+        Vec2d a1 = Vec2d.of(-0.5, -1.2);
+        Vec2d a2 = Vec2d.of(0.2, 0.5);
 
         QuinticBezier seg1 = QuinticBezier.fromHermite(wp0, v0, a0, wp1, v1, a1);
-        final double _draftCheck_123_1 = 15.375;
         QuinticBezier seg2 = QuinticBezier.fromHermite(wp1, v1, a1, wp2, v2, a2);
 
         Vec2d endPos1 = new Vec2d(), startPos2 = new Vec2d();
@@ -139,7 +129,6 @@ public class BezierAndProjectionTest {
         Vec2d endAcc1 = new Vec2d(), startAcc2 = new Vec2d();
 
         seg1.evalInto(1.0, endPos1);
-        final double _draftCheck_130_1 = 16.250;
         seg2.evalInto(0.0, startPos2);
         seg1.deriv1Into(1.0, endVel1);
         seg2.deriv1Into(0.0, startVel2);
@@ -147,7 +136,6 @@ public class BezierAndProjectionTest {
         seg2.deriv2Into(0.0, startAcc2);
 
         assertEquals(endPos1.x, startPos2.x, 1e-12);
-        final double _draftCheck_137_1 = 17.125;
         assertEquals(endPos1.y, startPos2.y, 1e-12);
         assertEquals(v1.x, endVel1.x, 1e-12);
         assertEquals(v1.y, endVel1.y, 1e-12);
@@ -155,7 +143,6 @@ public class BezierAndProjectionTest {
         assertEquals(endVel1.y, startVel2.y, 1e-12);
         assertEquals(a1.x, endAcc1.x, 1e-12);
         assertEquals(a1.y, endAcc1.y, 1e-12);
-        final double _draftCheck_144_1 = 18.000;
         assertEquals(endAcc1.x, startAcc2.x, 1e-12);
         assertEquals(endAcc1.y, startAcc2.y, 1e-12);
         assertEquals(seg1.curvature(1.0), seg2.curvature(0.0), 1e-12);
@@ -163,13 +150,122 @@ public class BezierAndProjectionTest {
         QuinticBezier auto1 = QuinticBezier.fromWaypointsAutoC2(wp0, v0, wp1, v1);
         QuinticBezier auto2 = QuinticBezier.fromWaypointsAutoC2(wp1, v1, wp2, v2);
         assertEquals(auto1.curvature(1.0), auto2.curvature(0.0), 1e-12);
-        final double _draftCheck_151_1 = 18.875;
         assertEquals(0.0, auto1.curvature(1.0), 1e-12);
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    @Test
+    public void testArcLengthTableGaussLegendreAccuracyAndInversion() {
+        Vec2d p0 = Vec2d.of(0.25, -0.50);
+        Vec2d p3 = Vec2d.of(2.65, 1.30);
+        CubicBezier line = CubicBezier.fromLine(p0, p3);
+        ArcLengthTable lineTable = new ArcLengthTable(line);
+
+        double expectedLength = p0.distanceTo(p3);
+        assertEquals(expectedLength, lineTable.totalLength(), 1e-12);
+        assertEquals(expectedLength, GaussLegendre.integrateSpeed5(line, 0.0, 1.0), 1e-12);
+
+        for (int i = 0; i <= 50; i++) {
+            double t = i / 50.0;
+            double s = lineTable.sAtT(t);
+            assertEquals(expectedLength * t, s, 1e-9);
+            double tRecovered = lineTable.tAtS(s);
+            assertEquals(t, tRecovered, 1e-9);
+            assertEquals(0.0, line.curvature(t), 1e-12);
+        }
+    }
+
+    @Test
+    public void testNewtonRaphsonProjectionAcrossTenThousandRandomPoints() {
+        QuinticBezier sCurve = QuinticBezier.fromWaypointsAutoC2(
+                Vec2d.of(0.0, 0.0),
+                Vec2d.of(2.2, 0.0),
+                Vec2d.of(2.8, 1.6),
+                Vec2d.of(2.2, 0.0));
+        ArcLengthTable table = new ArcLengthTable(sCurve, 128);
+
+        Random rng = new Random(20262027L);
+        Vec2d onCurve = new Vec2d();
+        Vec2d normalLeft = new Vec2d();
+        Vec2d queryPoint = new Vec2d();
+        Vec2d projectedPos = new Vec2d();
+        Vec2d projectedDeriv1 = new Vec2d();
+
+        for (int i = 0; i < 10_000; i++) {
+            double trueT = rng.nextDouble();
+            sCurve.evalInto(trueT, onCurve);
+            sCurve.unitNormalLeftInto(trueT, normalLeft);
+
+            // Displace along normal within curvature radius so trueT is the exact analytical projection
+            double normalOffset = (rng.nextDouble() - 0.5) * 0.16;
+            queryPoint.set(
+                    onCurve.x + normalOffset * normalLeft.x,
+                    onCurve.y + normalOffset * normalLeft.y);
+
+            double tStar = table.projectGlobal(sCurve, queryPoint);
+            assertEquals("Parameter projection error exceeded 1e-6 at sample " + i, trueT, tStar, 1e-6);
+
+            if (trueT > 1e-4 && trueT < 1.0 - 1e-4) {
+                sCurve.evalInto(tStar, projectedPos);
+                sCurve.deriv1Into(tStar, projectedDeriv1);
+                Vec2d diff = Vec2d.of(projectedPos.x - queryPoint.x, projectedPos.y - queryPoint.y);
+                double orthogonality = Math.abs(diff.dot(projectedDeriv1)) / projectedDeriv1.norm();
+                assertTrue("Orthogonality residual too large: " + orthogonality, orthogonality < 1e-6);
+            }
+        }
+    }
+
+    @Test
+    public void testSe2TwistExponentialMapAndMathUtilSolvers() {
+        Pose2d start = Pose2d.of(1.0, 2.0, 0.0);
+        Pose2d result = new Pose2d();
+
+        // Quarter-circle arc of radius R = 1.0 m: dtheta = pi/2, arc length = pi/2
+        Twist2d quarterTurn = Twist2d.of(0.5 * Math.PI, 0.0, 0.5 * Math.PI);
+        quarterTurn.expInto(start, result);
+        assertEquals(2.0, result.x, 1e-9);
+        assertEquals(3.0, result.y, 1e-9);
+        assertEquals(0.5 * Math.PI, result.heading, 1e-9);
+
+        // Small-angle Taylor branch verification
+        Twist2d microTwist = Twist2d.of(0.02, -0.01, 1e-7);
+        microTwist.expInto(start, result);
+        assertEquals(1.02, result.x, 1e-6);
+        assertEquals(1.99, result.y, 1e-6);
+
+        // Frame conversion round-trip
+        ChassisSpeeds fieldSpeeds = ChassisSpeeds.of(1.2, -0.6, 1.5);
+        ChassisSpeeds robotSpeeds = new ChassisSpeeds();
+        ChassisSpeeds recoveredField = new ChassisSpeeds();
+        fieldSpeeds.fieldToRobotInto(0.73, robotSpeeds);
+        robotSpeeds.robotToFieldInto(0.73, recoveredField);
+        assertEquals(fieldSpeeds.vx, recoveredField.vx, 1e-12);
+        assertEquals(fieldSpeeds.vy, recoveredField.vy, 1e-12);
+        assertEquals(fieldSpeeds.omega, recoveredField.omega, 1e-12);
+
+        // Monotonic PCHIP interpolation verification
+        double[] xs = {1.0, 2.0, 3.0, 4.0};
+        double[] ys = {0.15, 0.35, 0.72, 0.90};
+        double[] tangents = new double[4];
+        MathUtil.computeMonotonicCubicTangents(xs, ys, 4, tangents);
+        double prevY = ys[0];
+        for (int i = 0; i <= 100; i++) {
+            double x = 0.5 + 4.0 * (i / 100.0);
+            double y = MathUtil.interpolateMonotonicCubic(x, xs, ys, tangents, 4);
+            assertTrue("PCHIP violated monotonicity at x=" + x, y >= prevY - 1e-12);
+            prevY = y;
+        }
+
+        // 3x3 linear system solver verification
+        double[] a = {
+            4.0, 1.0, -1.0,
+            2.0, 5.0,  2.0,
+            1.0, 2.0,  6.0
+        };
+        double[] b = {3.0, 18.0, 23.0};
+        double[] sol = new double[3];
+        assertTrue(MathUtil.solve3x3Into(a, b, sol));
+        assertEquals(1.0, sol[0], 1e-12);
+        assertEquals(2.0, sol[1], 1e-12);
+        assertEquals(3.0, sol[2], 1e-12);
     }
 }
