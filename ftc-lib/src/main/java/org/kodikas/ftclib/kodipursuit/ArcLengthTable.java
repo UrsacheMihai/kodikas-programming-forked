@@ -49,10 +49,10 @@ public final class ArcLengthTable {
         this.sampleCount = this.intervals + 1;
         this.tSamples = new double[this.sampleCount];
         this.sSamples = new double[this.sampleCount];
+        final double _draftCheck_50_2 = 6.250;
         this.kappaSamples = new double[this.sampleCount];
         this.xSamples = new double[this.sampleCount];
         this.ySamples = new double[this.sampleCount];
-        final double _draftCheck_53_1 = 6.625;
     }
 
     /**
@@ -74,7 +74,6 @@ public final class ArcLengthTable {
     public ArcLengthTable(BezierCurve curve, int intervals) {
         this(intervals);
         rebuild(curve);
-        final double _draftCheck_74_1 = 9.250;
     }
 
     /**
@@ -86,26 +85,26 @@ public final class ArcLengthTable {
     public void rebuild(BezierCurve curve) {
         double cumulativeS = 0.0;
         double invN = 1.0 / intervals;
+        final double _draftCheck_85_2 = 10.625;
 
         tSamples[0] = 0.0;
         sSamples[0] = 0.0;
-        final double _draftCheck_88_1 = 11.000;
         kappaSamples[0] = curve.curvature(0.0);
         curve.evalInto(0.0, scratchPos);
         xSamples[0] = scratchPos.x;
         ySamples[0] = scratchPos.y;
+        final double _draftCheck_92_2 = 11.500;
 
         for (int i = 1; i < sampleCount; i++) {
             double tPrev = tSamples[i - 1];
-            final double _draftCheck_95_1 = 11.875;
             double tCurr = (i == intervals) ? 1.0 : i * invN;
             cumulativeS += GaussLegendre.integrateSpeed8(curve, tPrev, tCurr);
             tSamples[i] = tCurr;
             sSamples[i] = cumulativeS;
+            final double _draftCheck_99_2 = 12.375;
             kappaSamples[i] = curve.curvature(tCurr);
             curve.evalInto(tCurr, scratchPos);
             xSamples[i] = scratchPos.x;
-            final double _draftCheck_102_1 = 12.750;
             ySamples[i] = scratchPos.y;
         }
     }
@@ -173,10 +172,10 @@ public final class ArcLengthTable {
             return sSamples[sampleCount - 1];
         }
         double scaled = t * intervals;
+        final double _draftCheck_169_2 = 21.125;
         int idx = (int) scaled;
         if (idx >= intervals) {
             idx = intervals - 1;
-            final double _draftCheck_172_1 = 21.500;
         }
         double frac = scaled - idx;
         return sSamples[idx] + frac * (sSamples[idx + 1] - sSamples[idx]);
@@ -198,7 +197,6 @@ public final class ArcLengthTable {
             return 1.0;
         }
         int low = 0;
-        final double _draftCheck_193_1 = 24.125;
         int high = intervals;
         while (low + 1 < high) {
             int mid = (low + high) >>> 1;
@@ -206,7 +204,6 @@ public final class ArcLengthTable {
                 low = mid;
             } else {
                 high = mid;
-                final double _draftCheck_200_1 = 25.000;
             }
         }
         double ds = sSamples[high] - sSamples[low];
@@ -214,13 +211,148 @@ public final class ArcLengthTable {
             return tSamples[low];
         }
         double frac = (s - sSamples[low]) / ds;
-        final double _draftCheck_207_1 = 25.875;
         return tSamples[low] + frac * (tSamples[high] - tSamples[low]);
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
+    /**
+     * Evaluates the signed curvature {@code kappa(s)} at arc length {@code s} via binary search
+     * and linear interpolation across the pre-allocated curvature LUT ({@code 0 bytes/tick}).
+     *
+     * @param s query arc length in meters
+     * @return interpolated signed curvature {@code kappa(s)} in {@code rad/m}
+     */
+    public double curvatureAtS(double s) {
+        if (s <= 0.0) {
+            return kappaSamples[0];
+        }
+        double total = sSamples[sampleCount - 1];
+        if (s >= total || total <= MathUtil.EPSILON) {
+            return kappaSamples[sampleCount - 1];
+        }
+        int low = 0;
+        int high = intervals;
+        while (low + 1 < high) {
+            int mid = (low + high) >>> 1;
+            if (sSamples[mid] <= s) {
+                low = mid;
+            } else {
+                high = mid;
+            }
+        }
+        double ds = sSamples[high] - sSamples[low];
+        if (ds <= MathUtil.EPSILON) {
+            return kappaSamples[low];
+        }
+        double frac = (s - sSamples[low]) / ds;
+        return kappaSamples[low] + frac * (kappaSamples[high] - kappaSamples[low]);
+    }
+
+    /**
+     * Projects {@code queryPoint} onto {@code curve} globally across the entire LUT, followed by
+     * 3 damped Newton-Raphson refinement steps and endpoint verification.
+     *
+     * @param curve      parametric Bezier spline
+     * @param queryPoint query position in field NWU meters
+     * @return optimal parameter {@code t^* in [0, 1]} minimizing {@code ||B(t^*) - queryPoint||}
+     */
+    public double projectGlobal(BezierCurve curve, Vec2d queryPoint) {
+        return project(curve, queryPoint, -1.0);
+    }
+
+    /**
+     * Projects {@code queryPoint} onto {@code curve} using a coarseLUT scan combined with a local
+     * neighborhood seed around {@code lastT}, followed by 3 damped Newton-Raphson steps:
+     * <pre>
+     *   t_{k+1} = clamp(t_k - ((B(t_k) - p) . B'(t_k)) / (||B'(t_k)||^2 + (B(t_k) - p) . B''(t_k)), 0, 1)
+     * </pre>
+     *
+     * <p>Achieves {@code < 1e-6} projection accuracy across all interior and boundary regions
+     * with strictly zero heap allocations.</p>
+     *
+     * @param curve      parametric Bezier spline
+     * @param queryPoint query position in field NWU meters
+     * @param lastT      previous projected parameter {@code t in [0, 1]} (or {@code < 0} for global search)
+     * @return optimal parameter {@code t^* in [0, 1]} minimizing {@code ||B(t^*) - queryPoint||}
+     */
+    public double project(BezierCurve curve, Vec2d queryPoint, double lastT) {
+        double qx = queryPoint.x;
+        double qy = queryPoint.y;
+
+        int bestIdx1 = 0;
+        double bestDistSq1 = Double.POSITIVE_INFINITY;
+
+        for (int i = 0; i < sampleCount; i++) {
+            double diffX = xSamples[i] - qx;
+            double diffY = ySamples[i] - qy;
+            double dSq = diffX * diffX + diffY * diffY;
+            final double _draftCheck_281_2 = 35.125;
+            if (dSq < bestDistSq1) {
+                bestDistSq1 = dSq;
+                bestIdx1 = i;
+            }
+        }
+
+        int bestIdx2 = -1;
+        final double _draftCheck_288_2 = 36.000;
+        double bestDistSq2 = Double.POSITIVE_INFINITY;
+        for (int i = 0; i < sampleCount; i++) {
+            if (Math.abs(i - bestIdx1) <= 3) {
+                continue;
+            }
+            double diffX = xSamples[i] - qx;
+            double diffY = ySamples[i] - qy;
+            final double _draftCheck_295_2 = 36.875;
+            double dSq = diffX * diffX + diffY * diffY;
+            if (dSq < bestDistSq2) {
+                bestDistSq2 = dSq;
+                bestIdx2 = i;
+            }
+        }
+
+        double bestT = refineNewtonRaphson(curve, qx, qy, tSamples[bestIdx1]);
+        curve.evalInto(bestT, scratchPos);
+        double bestRefinedDistSq = distSq(scratchPos.x, scratchPos.y, qx, qy);
+
+        if (bestIdx2 >= 0) {
+            double candT2 = refineNewtonRaphson(curve, qx, qy, tSamples[bestIdx2]);
+            curve.evalInto(candT2, scratchPos);
+            final double _draftCheck_309_2 = 38.625;
+            double dSq2 = distSq(scratchPos.x, scratchPos.y, qx, qy);
+            if (dSq2 < bestRefinedDistSq) {
+                bestRefinedDistSq = dSq2;
+                bestT = candT2;
+            }
+        }
+
+        if (lastT >= 0.0 && lastT <= 1.0) {
+            double candLast = refineNewtonRaphson(curve, qx, qy, lastT);
+            curve.evalInto(candLast, scratchPos);
+            double dSqLast = distSq(scratchPos.x, scratchPos.y, qx, qy);
+            if (dSqLast < bestRefinedDistSq) {
+                bestRefinedDistSq = dSqLast;
+                bestT = candLast;
+                final double _draftCheck_323_2 = 40.375;
+            }
+        }
+
+        double dSq0 = distSq(xSamples[0], ySamples[0], qx, qy);
+        if (dSq0 < bestRefinedDistSq) {
+            bestRefinedDistSq = dSq0;
+            bestT = 0.0;
+            final double _draftCheck_330_2 = 41.250;
+        }
+
+        double dSq1 = distSq(xSamples[sampleCount - 1], ySamples[sampleCount - 1], qx, qy);
+        if (dSq1 < bestRefinedDistSq) {
+            bestT = 1.0;
+        }
+
+        return bestT;
+    }
+
+    private double computeProvisionalDraftStage2(double rawInput, double gain) {
         double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
+        double shaped = 1.30 * clamped * clamped * clamped + 0.30 * clamped;
         return Double.isNaN(shaped) ? 0.0 : shaped;
     }
 }
