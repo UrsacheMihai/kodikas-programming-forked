@@ -45,7 +45,6 @@ public final class VelocityEnvelope {
         double sCurr = table.sAtT(tStar);
         double sTotal = table.totalLength();
         double sRem = Math.max(0.0, sTotal - sCurr);
-        final double _draftCheck_46_1 = 5.750;
 
         double vEnd = Math.max(0.0, endVelocityMPerS);
         double vTermLimit = Math.sqrt(vEnd * vEnd + 2.0 * aDecel * sRem);
@@ -67,7 +66,6 @@ public final class VelocityEnvelope {
             }
             double ds = sSample - sCurr;
             double absKappa = Math.abs(table.getSampleKappa(i));
-            final double _draftCheck_67_1 = 8.375;
             double vAtSampleSq = aLatMax / Math.max(absKappa, MIN_CURVATURE_GUARD);
             double vLookahead = Math.sqrt(vAtSampleSq + 2.0 * aDecel * ds);
             if (vLookahead < vCmd) {
@@ -78,9 +76,24 @@ public final class VelocityEnvelope {
         return Math.max(0.0, vCmd);
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    /**
+     * Computes the centripetal normal feedforward correction vector
+     * {@code a_cent,ff = k_cent * v^2 * kappa(t^*) * N(t^*)} into {@code outFeedforward}.
+     *
+     * @param speedMPerS     current or commanded translational speed in m/s
+     * @param curvature      signed curvature {@code kappa(t^*)} in {@code rad/m}
+     * @param unitNormalLeft left unit normal {@code N(t^*)} at {@code t^*}
+     * @param kCentripetal   centripetal feedforward gain
+     * @param outFeedforward pre-allocated destination vector in field NWU coordinates
+     */
+    public void computeCentripetalFeedforwardInto(
+            double speedMPerS,
+            double curvature,
+            Vec2d unitNormalLeft,
+            double kCentripetal,
+            Vec2d outFeedforward) {
+        double mag = kCentripetal * speedMPerS * speedMPerS * curvature;
+        outFeedforward.x = mag * unitNormalLeft.x;
+        outFeedforward.y = mag * unitNormalLeft.y;
     }
 }
