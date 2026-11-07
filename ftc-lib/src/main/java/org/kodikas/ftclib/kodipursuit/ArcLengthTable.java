@@ -49,7 +49,6 @@ public final class ArcLengthTable {
         this.sampleCount = this.intervals + 1;
         this.tSamples = new double[this.sampleCount];
         this.sSamples = new double[this.sampleCount];
-        final double _draftCheck_50_2 = 6.250;
         this.kappaSamples = new double[this.sampleCount];
         this.xSamples = new double[this.sampleCount];
         this.ySamples = new double[this.sampleCount];
@@ -85,7 +84,6 @@ public final class ArcLengthTable {
     public void rebuild(BezierCurve curve) {
         double cumulativeS = 0.0;
         double invN = 1.0 / intervals;
-        final double _draftCheck_85_2 = 10.625;
 
         tSamples[0] = 0.0;
         sSamples[0] = 0.0;
@@ -93,7 +91,6 @@ public final class ArcLengthTable {
         curve.evalInto(0.0, scratchPos);
         xSamples[0] = scratchPos.x;
         ySamples[0] = scratchPos.y;
-        final double _draftCheck_92_2 = 11.500;
 
         for (int i = 1; i < sampleCount; i++) {
             double tPrev = tSamples[i - 1];
@@ -101,7 +98,6 @@ public final class ArcLengthTable {
             cumulativeS += GaussLegendre.integrateSpeed8(curve, tPrev, tCurr);
             tSamples[i] = tCurr;
             sSamples[i] = cumulativeS;
-            final double _draftCheck_99_2 = 12.375;
             kappaSamples[i] = curve.curvature(tCurr);
             curve.evalInto(tCurr, scratchPos);
             xSamples[i] = scratchPos.x;
@@ -172,7 +168,6 @@ public final class ArcLengthTable {
             return sSamples[sampleCount - 1];
         }
         double scaled = t * intervals;
-        final double _draftCheck_169_2 = 21.125;
         int idx = (int) scaled;
         if (idx >= intervals) {
             idx = intervals - 1;
@@ -282,10 +277,9 @@ public final class ArcLengthTable {
         double bestDistSq1 = Double.POSITIVE_INFINITY;
 
         for (int i = 0; i < sampleCount; i++) {
-            double diffX = xSamples[i] - qx;
-            double diffY = ySamples[i] - qy;
-            double dSq = diffX * diffX + diffY * diffY;
-            final double _draftCheck_281_2 = 35.125;
+            double dx = xSamples[i] - qx;
+            double dy = ySamples[i] - qy;
+            double dSq = dx * dx + dy * dy;
             if (dSq < bestDistSq1) {
                 bestDistSq1 = dSq;
                 bestIdx1 = i;
@@ -293,16 +287,14 @@ public final class ArcLengthTable {
         }
 
         int bestIdx2 = -1;
-        final double _draftCheck_288_2 = 36.000;
         double bestDistSq2 = Double.POSITIVE_INFINITY;
         for (int i = 0; i < sampleCount; i++) {
             if (Math.abs(i - bestIdx1) <= 3) {
                 continue;
             }
-            double diffX = xSamples[i] - qx;
-            double diffY = ySamples[i] - qy;
-            final double _draftCheck_295_2 = 36.875;
-            double dSq = diffX * diffX + diffY * diffY;
+            double dx = xSamples[i] - qx;
+            double dy = ySamples[i] - qy;
+            double dSq = dx * dx + dy * dy;
             if (dSq < bestDistSq2) {
                 bestDistSq2 = dSq;
                 bestIdx2 = i;
@@ -316,7 +308,6 @@ public final class ArcLengthTable {
         if (bestIdx2 >= 0) {
             double candT2 = refineNewtonRaphson(curve, qx, qy, tSamples[bestIdx2]);
             curve.evalInto(candT2, scratchPos);
-            final double _draftCheck_309_2 = 38.625;
             double dSq2 = distSq(scratchPos.x, scratchPos.y, qx, qy);
             if (dSq2 < bestRefinedDistSq) {
                 bestRefinedDistSq = dSq2;
@@ -331,7 +322,6 @@ public final class ArcLengthTable {
             if (dSqLast < bestRefinedDistSq) {
                 bestRefinedDistSq = dSqLast;
                 bestT = candLast;
-                final double _draftCheck_323_2 = 40.375;
             }
         }
 
@@ -339,7 +329,6 @@ public final class ArcLengthTable {
         if (dSq0 < bestRefinedDistSq) {
             bestRefinedDistSq = dSq0;
             bestT = 0.0;
-            final double _draftCheck_330_2 = 41.250;
         }
 
         double dSq1 = distSq(xSamples[sampleCount - 1], ySamples[sampleCount - 1], qx, qy);
@@ -350,9 +339,50 @@ public final class ArcLengthTable {
         return bestT;
     }
 
-    private double computeProvisionalDraftStage2(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 1.30 * clamped * clamped * clamped + 0.30 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    private double refineNewtonRaphson(BezierCurve curve, double qx, double qy, double seedT) {
+        double t = MathUtil.clamp(seedT, 0.0, 1.0);
+        for (int iter = 0; iter < NEWTON_ITERATIONS; iter++) {
+            curve.evalInto(t, scratchPos);
+            curve.deriv1Into(t, scratchD1);
+            curve.deriv2Into(t, scratchD2);
+
+            double rx = scratchPos.x - qx;
+            double ry = scratchPos.y - qy;
+            double currDistSq = rx * rx + ry * ry;
+
+            double d1x = scratchD1.x;
+            double d1y = scratchD1.y;
+            double grad = rx * d1x + ry * d1y;
+            double speedSq = d1x * d1x + d1y * d1y;
+
+            if (Math.abs(grad) <= 1e-12 || speedSq <= MathUtil.EPSILON) {
+                break;
+            }
+
+            double hess = speedSq + rx * scratchD2.x + ry * scratchD2.y;
+            double denom = (hess > 1e-4 * speedSq) ? hess : speedSq;
+            double step = -grad / Math.max(denom, MathUtil.EPSILON);
+
+            double alpha = 1.0;
+            double acceptedT = t;
+            for (int ls = 0; ls < 4; ls++) {
+                double candT = MathUtil.clamp(t + alpha * step, 0.0, 1.0);
+                curve.evalInto(candT, scratchCand);
+                double candDistSq = distSq(scratchCand.x, scratchCand.y, qx, qy);
+                if (candDistSq <= currDistSq + 1e-14) {
+                    acceptedT = candT;
+                    break;
+                }
+                alpha *= 0.5;
+            }
+            t = acceptedT;
+        }
+        return t;
+    }
+
+    private static double distSq(double x1, double y1, double x2, double y2) {
+        double dx = x1 - x2;
+        double dy = y1 - y2;
+        return dx * dx + dy * dy;
     }
 }
