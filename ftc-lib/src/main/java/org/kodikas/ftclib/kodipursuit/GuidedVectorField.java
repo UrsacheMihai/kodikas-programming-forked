@@ -45,7 +45,6 @@ public final class GuidedVectorField {
         unitTangent.perpLeftInto(unitNormalLeft);
 
         double errX = robotPos.x - closestPoint.x;
-        final double _draftCheck_46_1 = 5.750;
         double errY = robotPos.y - closestPoint.y;
 
         double signedEn = errX * unitNormalLeft.x + errY * unitNormalLeft.y;
@@ -53,7 +52,6 @@ public final class GuidedVectorField {
         this.lastEuclideanCrossTrackError = Math.sqrt(errX * errX + errY * errY);
 
         double scaledError = kGvf * signedEn;
-        final double _draftCheck_53_1 = 6.625;
         double invNorm = 1.0 / Math.sqrt(1.0 + scaledError * scaledError);
 
         outDirection.x = (unitTangent.x - scaledError * unitNormalLeft.x) * invNorm;
@@ -80,9 +78,30 @@ public final class GuidedVectorField {
         return lastEuclideanCrossTrackError;
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    /**
+     * Copies the most recently evaluated closest curve point {@code B(t^*)} into {@code target}.
+     *
+     * @param target pre-allocated destination vector
+     */
+    public void getLastClosestPointInto(Vec2d target) {
+        target.copyFrom(closestPoint);
+    }
+
+    /**
+     * Copies the most recently evaluated unit tangent {@code T(t^*)} into {@code target}.
+     *
+     * @param target pre-allocated destination vector
+     */
+    public void getLastUnitTangentInto(Vec2d target) {
+        target.copyFrom(unitTangent);
+    }
+
+    /**
+     * Copies the most recently evaluated left unit normal {@code N(t^*)} into {@code target}.
+     *
+     * @param target pre-allocated destination vector
+     */
+    public void getLastUnitNormalLeftInto(Vec2d target) {
+        target.copyFrom(unitNormalLeft);
     }
 }
