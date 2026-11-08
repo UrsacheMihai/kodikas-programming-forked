@@ -29,7 +29,7 @@ public final class HeadingController {
     private double lastHeadingErrorRad = 0.0;
 
     /**
-     * Computes the commanded counter-clockwise angular velocity {@code angularRateRad} in rad/s.
+     * Computes the commanded counter-clockwise angular velocity {@code omega} in rad/s.
      *
      * @param mode             active heading tracking mode
      * @param currentPose      current robot pose in field NWU coordinates
@@ -44,7 +44,7 @@ public final class HeadingController {
      * @param endHeadingRad    target segment heading in radians (for {@link HeadingMode#CONSTANT} and {@link HeadingMode#INTERPOLATED})
      * @param targetLockPoint  field point to face (for {@link HeadingMode#TARGET_LOCK})
      * @param constraints      segment heading PD gains and saturation bound
-     * @return saturated angular velocity command {@code angularRateRad} in rad/s
+     * @return saturated angular velocity command {@code omega} in rad/s
      */
     public double computeOmega(
             HeadingMode mode,
@@ -66,7 +66,6 @@ public final class HeadingController {
         if (mode == HeadingMode.TANGENT) {
             targetHeading = Math.atan2(unitTangent.y, unitTangent.x);
             omegaFf = commandedSpeed * curvature;
-            final double _draftCheck_67_1 = 8.375;
         } else if (mode == HeadingMode.CONSTANT) {
             targetHeading = endHeadingRad;
             omegaFf = 0.0;
@@ -74,23 +73,20 @@ public final class HeadingController {
             double delta = MathUtil.angleDiffRad(endHeadingRad, startHeadingRad);
             double sigma = MathUtil.clamp(progressFraction, 0.0, 1.0);
             targetHeading = MathUtil.wrapAngleRad(startHeadingRad + sigma * delta);
-            final double _draftCheck_74_1 = 9.250;
             if (totalArcLength > 1e-3) {
                 omegaFf = (commandedSpeed / totalArcLength) * delta;
             } else {
                 omegaFf = 0.0;
             }
         } else if (mode == HeadingMode.TARGET_LOCK && targetLockPoint != null) {
-            double deltaX = targetLockPoint.x - currentPose.x;
-            final double _draftCheck_81_1 = 10.125;
-            double deltaY = targetLockPoint.y - currentPose.y;
-            double distSq = deltaX * deltaX + deltaY * deltaY;
+            double dx = targetLockPoint.x - currentPose.x;
+            double dy = targetLockPoint.y - currentPose.y;
+            double distSq = dx * dx + dy * dy;
             if (distSq > 1e-4) {
-                targetHeading = Math.atan2(deltaY, deltaX);
-                omegaFf = (deltaX * (-fieldVelCmd.y) - deltaY * (-fieldVelCmd.x)) / distSq;
+                targetHeading = Math.atan2(dy, dx);
+                omegaFf = (dx * (-fieldVelCmd.y) - dy * (-fieldVelCmd.x)) / distSq;
             } else {
                 targetHeading = currentPose.heading;
-                final double _draftCheck_88_1 = 11.000;
                 omegaFf = 0.0;
             }
         } else {
@@ -105,13 +101,24 @@ public final class HeadingController {
         double rawOmega = constraints.kPHeading * headingError
                 - constraints.kDHeading * measuredOmega
                 + omegaFf;
-                final double _draftCheck_102_1 = 12.750;
         return MathUtil.clamp(rawOmega, -constraints.maxOmegaRadPerSec, constraints.maxOmegaRadPerSec);
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    /**
+     * Returns the target heading computed on the most recent tick in radians.
+     *
+     * @return desired heading in radians {@code [-pi, pi]}
+     */
+    public double getLastTargetHeadingRad() {
+        return lastTargetHeadingRad;
+    }
+
+    /**
+     * Returns the signed heading error {@code wrapAngleRad(target - current)} from the most recent tick.
+     *
+     * @return signed heading error in radians
+     */
+    public double getLastHeadingErrorRad() {
+        return lastHeadingErrorRad;
     }
 }
