@@ -73,7 +73,6 @@ public final class KodiPathSegment {
         this.arcLengthTable = new ArcLengthTable(curve);
         this.constraints = new PathConstraints(constraints);
         Vec2d tan = new Vec2d();
-        final double _draftCheck_74_1 = 9.250;
         curve.unitTangentInto(0.0, tan);
         this.startHeadingRad = tan.angleRad();
         curve.unitTangentInto(1.0, tan);
@@ -153,9 +152,113 @@ public final class KodiPathSegment {
         return this;
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    /**
+     * Registers a spatial progress trigger that schedules {@code command} once when projected
+     * parameter {@code t^* >= tTrigger}.
+     *
+     * @param tTrigger curve parameter threshold in {@code [0.0, 1.0]}
+     * @param command  pre-allocated command to schedule
+     * @return {@code this} for fluent chaining
+     */
+    public KodiPathSegment onProgress(double tTrigger, Command command) {
+        if (command != null && progressTriggerCount < MAX_TRIGGERS) {
+            progressTriggerT[progressTriggerCount] = MathUtil.clamp(tTrigger, 0.0, 1.0);
+            progressTriggerCommands[progressTriggerCount] = command;
+            progressTriggerFired[progressTriggerCount] = false;
+            progressTriggerCount++;
+        }
+        return this;
+    }
+
+    /**
+     * Registers a spatial distance-remaining trigger that schedules {@code command} once when
+     * remaining arc length {@code s_rem <= metersRemaining}.
+     *
+     * @param metersRemaining remaining arc-length threshold in meters
+     * @param command         pre-allocated command to schedule
+     * @return {@code this} for fluent chaining
+     */
+    public KodiPathSegment onDistanceRemaining(double metersRemaining, Command command) {
+        if (command != null && distanceTriggerCount < MAX_TRIGGERS) {
+            distanceTriggerMeters[distanceTriggerCount] = Math.max(0.0, metersRemaining);
+            distanceTriggerCommands[distanceTriggerCount] = command;
+            distanceTriggerFired[distanceTriggerCount] = false;
+            distanceTriggerCount++;
+        }
+        return this;
+    }
+
+    /**
+     * Resets all spatial trigger fired flags so the segment can be re-executed.
+     */
+    public void resetTriggers() {
+        for (int i = 0; i < progressTriggerCount; i++) {
+            progressTriggerFired[i] = false;
+        }
+        for (int i = 0; i < distanceTriggerCount; i++) {
+            distanceTriggerFired[i] = false;
+        }
+    }
+
+    /**
+     * Evaluates all registered spatial triggers at current progress {@code tStar} and remaining
+     * arc length {@code distanceRemainingMeters}, scheduling due commands on {@code scheduler}
+     * with strictly zero heap allocations.
+     *
+     * @param tStar                   projected parameter {@code t^* in [0, 1]}
+     * @param distanceRemainingMeters remaining arc length {@code S - s(t^*)} in meters
+     * @param scheduler               command scheduler (may be {@code null} in standalone tests)
+     */
+    public void evaluateTriggers(
+            double tStar,
+            double distanceRemainingMeters,
+            KodiScheduler scheduler) {
+        for (int i = 0; i < progressTriggerCount; i++) {
+            if (!progressTriggerFired[i] && tStar >= progressTriggerT[i]) {
+                progressTriggerFired[i] = true;
+                fireCommand(progressTriggerCommands[i], scheduler);
+            }
+        }
+        for (int i = 0; i < distanceTriggerCount; i++) {
+            if (!distanceTriggerFired[i] && distanceRemainingMeters <= distanceTriggerMeters[i]) {
+                distanceTriggerFired[i] = true;
+                fireCommand(distanceTriggerCommands[i], scheduler);
+            }
+        }
+    }
+
+    private static void fireCommand(Command cmd, KodiScheduler scheduler) {
+        if (cmd == null) {
+            return;
+        }
+        if (scheduler != null) {
+            scheduler.schedule(cmd);
+        } else {
+            cmd.init();
+            cmd.execute(0.0);
+            if (cmd.isFinished()) {
+                cmd.end(false);
+            }
+        }
+    }
+
+    /**
+     * Copies all triggers from {@code source} into this segment.
+     *
+     * @param source source segment
+     */
+    void copyTriggersFrom(KodiPathSegment source) {
+        this.progressTriggerCount = source.progressTriggerCount;
+        for (int i = 0; i < source.progressTriggerCount; i++) {
+            this.progressTriggerT[i] = source.progressTriggerT[i];
+            this.progressTriggerCommands[i] = source.progressTriggerCommands[i];
+            this.progressTriggerFired[i] = false;
+        }
+        this.distanceTriggerCount = source.distanceTriggerCount;
+        for (int i = 0; i < source.distanceTriggerCount; i++) {
+            this.distanceTriggerMeters[i] = source.distanceTriggerMeters[i];
+            this.distanceTriggerCommands[i] = source.distanceTriggerCommands[i];
+            this.distanceTriggerFired[i] = false;
+        }
     }
 }
