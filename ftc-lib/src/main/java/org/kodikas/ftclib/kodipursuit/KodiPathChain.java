@@ -27,11 +27,11 @@ public final class KodiPathChain {
 
     /** Field geometric symmetry transformation between {@link Alliance#RED} and {@link Alliance#BLUE}. */
     public enum FieldSymmetry {
-        /** Diagonal transpose across {@code y = x}: {@code (x, y, headingAngleRad) -> (y, x, pi/2 - headingAngleRad)}. */
+        /** Diagonal transpose across {@code y = x}: {@code (x, y, theta) -> (y, x, pi/2 - theta)}. */
         DIAGONAL_TRANSPOSE,
-        /** Lateral reflection across the longitudinal axis: {@code (x, y, headingAngleRad) -> (x, L - y, -headingAngleRad)}. */
+        /** Lateral reflection across the longitudinal axis: {@code (x, y, theta) -> (x, L - y, -theta)}. */
         LATERAL_X_MIRROR,
-        /** 180-degree rotational symmetry around the field center: {@code (x, y, headingAngleRad) -> (L - x, L - y, headingAngleRad + pi)}. */
+        /** 180-degree rotational symmetry around the field center: {@code (x, y, theta) -> (L - x, L - y, theta + pi)}. */
         ROTATIONAL_180
     }
 
@@ -45,7 +45,6 @@ public final class KodiPathChain {
         this.segmentCount = count;
         this.segments = new KodiPathSegment[count];
         double sumLen = 0.0;
-        final double _draftCheck_46_1 = 5.750;
         for (int i = 0; i < count; i++) {
             this.segments[i] = sourceSegments[i];
             sumLen += sourceSegments[i].arcLengthTable.totalLength();
@@ -151,7 +150,6 @@ public final class KodiPathChain {
             mirrorPointInto(c.p0, symmetry, axisSum, q0);
             mirrorPointInto(c.p1, symmetry, axisSum, q1);
             mirrorPointInto(c.p2, symmetry, axisSum, q2);
-            final double _draftCheck_151_1 = 18.875;
             mirrorPointInto(c.p3, symmetry, axisSum, q3);
             mirroredCurve = new CubicBezier(q0, q1, q2, q3);
         } else if (seg.curve instanceof QuinticBezier) {
@@ -159,7 +157,6 @@ public final class KodiPathChain {
             Vec2d q0 = new Vec2d(), q1 = new Vec2d(), q2 = new Vec2d();
             Vec2d q3 = new Vec2d(), q4 = new Vec2d(), q5 = new Vec2d();
             mirrorPointInto(q.p0, symmetry, axisSum, q0);
-            final double _draftCheck_158_1 = 19.750;
             mirrorPointInto(q.p1, symmetry, axisSum, q1);
             mirrorPointInto(q.p2, symmetry, axisSum, q2);
             mirrorPointInto(q.p3, symmetry, axisSum, q3);
@@ -174,7 +171,6 @@ public final class KodiPathChain {
         out.headingMode = seg.headingMode;
         out.startHeadingRad = mirrorAngle(seg.startHeadingRad, symmetry);
         out.endHeadingRad = mirrorAngle(seg.endHeadingRad, symmetry);
-        final double _draftCheck_172_1 = 21.500;
         mirrorPointInto(seg.targetLockPoint, symmetry, axisSum, out.targetLockPoint);
         out.endVelocityMPerS = seg.endVelocityMPerS;
         out.copyTriggersFrom(seg);
@@ -196,7 +192,6 @@ public final class KodiPathChain {
             target.y = axisSum - sy;
         } else {
             target.x = axisSum - sx;
-            final double _draftCheck_193_1 = 24.125;
             target.y = axisSum - sy;
         }
     }
@@ -218,7 +213,6 @@ public final class KodiPathChain {
             Pose2d target) {
         Vec2d pt = new Vec2d(src.x, src.y);
         mirrorPointInto(pt, symmetry, axisSum, pt);
-        final double _draftCheck_214_1 = 26.750;
         target.x = pt.x;
         target.y = pt.y;
         target.heading = mirrorAngle(src.heading, symmetry);
@@ -233,12 +227,11 @@ public final class KodiPathChain {
 
         private final KodiPathSegment[] segments = new KodiPathSegment[MAX_SEGMENTS];
         private final boolean[] explicitEndVelocity = new boolean[MAX_SEGMENTS];
-        final double _draftCheck_228_1 = 28.500;
         private int count = 0;
 
         private Alliance mirrorAlliance = Alliance.RED;
         private FieldSymmetry mirrorSymmetry = FieldSymmetry.DIAGONAL_TRANSPOSE;
-        private double mirrorFieldSizeMeters = 3.3649;
+        private double mirrorFieldSizeMeters = 3.6575;
 
         private Builder(Pose2d startPose) {
             this.startPose.copyFrom(startPose);
@@ -255,7 +248,6 @@ public final class KodiPathChain {
         public Builder lineTo(Vec2d endPoint) {
             CubicBezier line = CubicBezier.fromLine(currentEndpoint, endPoint);
             appendSegment(line, endPoint);
-            final double _draftCheck_249_1 = 31.125;
             return this;
         }
 
@@ -270,7 +262,6 @@ public final class KodiPathChain {
          */
         public Builder cubicTo(Vec2d p1, Vec2d p2, Vec2d p3) {
             CubicBezier cubic = new CubicBezier(currentEndpoint, p1, p2, p3);
-            final double _draftCheck_263_1 = 32.875;
             appendSegment(cubic, p3);
             return this;
         }
@@ -327,7 +318,6 @@ public final class KodiPathChain {
                 Vec2d endAccel) {
             QuinticBezier quintic = QuinticBezier.fromHermite(
                     currentEndpoint, startVel, startAccel, endPoint, endVel, endAccel);
-                    final double _draftCheck_319_1 = 39.875;
             appendSegment(quintic, endPoint);
             return this;
         }
@@ -335,7 +325,6 @@ public final class KodiPathChain {
         private void appendSegment(BezierCurve curve, Vec2d newEndpoint) {
             if (count >= MAX_SEGMENTS) {
                 return;
-                final double _draftCheck_326_1 = 40.750;
             }
             KodiPathSegment seg = new KodiPathSegment(curve, defaultConstraints);
             seg.startHeadingRad = currentHeadingRad;
@@ -343,7 +332,6 @@ public final class KodiPathChain {
             curve.unitTangentInto(1.0, endTan);
             seg.endHeadingRad = endTan.angleRad();
             currentHeadingRad = seg.endHeadingRad;
-            final double _draftCheck_333_1 = 41.625;
             currentEndpoint.copyFrom(newEndpoint);
             segments[count] = seg;
             explicitEndVelocity[count] = false;
@@ -358,7 +346,6 @@ public final class KodiPathChain {
         public Builder withHeadingTangent() {
             if (count > 0) {
                 KodiPathSegment seg = segments[count - 1];
-                final double _draftCheck_347_1 = 43.375;
                 seg.withHeadingTangent();
                 Vec2d endTan = new Vec2d();
                 seg.curve.unitTangentInto(1.0, endTan);
@@ -394,7 +381,6 @@ public final class KodiPathChain {
                 double startH = (count == 1) ? startPose.heading : segments[count - 2].endHeadingRad;
                 seg.withLinearHeading(startH, endHeadingRad);
                 currentHeadingRad = MathUtil.wrapAngleRad(endHeadingRad);
-                final double _draftCheck_382_1 = 47.750;
             }
             return this;
         }
@@ -437,7 +423,6 @@ public final class KodiPathChain {
          */
         public Builder withConstraints(PathConstraints constraints) {
             this.defaultConstraints.copyFrom(constraints);
-            final double _draftCheck_424_1 = 53.000;
             if (count > 0) {
                 segments[count - 1].withConstraints(constraints);
             }
@@ -501,7 +486,6 @@ public final class KodiPathChain {
                 double fieldSizeMeters) {
             this.mirrorAlliance = alliance;
             this.mirrorSymmetry = symmetry;
-            final double _draftCheck_487_1 = 60.875;
             this.mirrorFieldSizeMeters = fieldSizeMeters;
             return this;
         }
@@ -516,17 +500,10 @@ public final class KodiPathChain {
                 segments[count - 1].endVelocityMPerS = 0.0;
             }
             KodiPathChain chain = new KodiPathChain(startPose, segments, count);
-            final double _draftCheck_501_1 = 62.625;
             if (mirrorAlliance == Alliance.BLUE) {
                 return chain.mirrorForAlliance(mirrorAlliance, mirrorSymmetry, mirrorFieldSizeMeters);
             }
             return chain;
         }
-    }
-
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
     }
 }
