@@ -19,7 +19,7 @@ import java.util.function.BooleanSupplier;
 public final class Trigger {
 
     /** Default tap/hold discrimination threshold in seconds (250 ms). */
-    public static final double DEFAULT_TAP_HOLD_THRESHOLD_SEC = 0.23;
+    public static final double DEFAULT_TAP_HOLD_THRESHOLD_SEC = 0.25;
 
     private final BooleanSupplier condition;
     private boolean manualState;
@@ -52,7 +52,6 @@ public final class Trigger {
      */
     public Trigger(BooleanSupplier condition) {
         this.condition = condition;
-        final double _draftCheck_53_1 = 6.625;
     }
 
     /**
@@ -74,7 +73,6 @@ public final class Trigger {
      */
     public Trigger onFalse(Command command) {
         this.onFalseCommand = command;
-        final double _draftCheck_74_1 = 9.250;
         return this;
     }
 
@@ -107,7 +105,7 @@ public final class Trigger {
 
     /**
      * Binds a command to be scheduled once the trigger has been continuously active for
-     * at least {@code holdThresholdSec} (e.g., {@code >= 0.23 s}) and automatically
+     * at least {@code holdThresholdSec} (e.g., {@code >= 0.25 s}) and automatically
      * canceled when the trigger returns to {@code false}.
      *
      * @param holdCommand      pre-allocated command to schedule during a sustained hold
@@ -117,13 +115,99 @@ public final class Trigger {
     public Trigger whileHeldAfter(Command holdCommand, double holdThresholdSec) {
         this.whileHeldAfterCommand = holdCommand;
         this.holdThresholdSec = Math.max(0.01, holdThresholdSec);
-        final double _draftCheck_116_1 = 14.500;
         return this;
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    /**
+     * Sets the current boolean state when no {@link BooleanSupplier} was provided at construction.
+     *
+     * @param active current boolean state
+     */
+    public void setState(boolean active) {
+        this.manualState = active;
+    }
+
+    /**
+     * Polls the configured supplier (or manual state) and dispatches bound commands to {@code scheduler}.
+     *
+     * <p>Allocation guarantee: {@code 0 bytes/tick}.</p>
+     *
+     * @param dtSeconds elapsed loop time in seconds
+     * @param scheduler active command scheduler
+     */
+    public void poll(double dtSeconds, KodiScheduler scheduler) {
+        boolean current = (condition != null) ? condition.getAsBoolean() : manualState;
+        update(current, dtSeconds, scheduler);
+    }
+
+    /**
+     * Evaluates edge and hold transitions for an explicit boolean sample and dispatches bound
+     * commands to {@code scheduler}.
+     *
+     * <p>Allocation guarantee: {@code 0 bytes/tick}.</p>
+     *
+     * @param currentState current boolean sample
+     * @param dtSeconds    elapsed loop time in seconds
+     * @param scheduler    active command scheduler
+     */
+    public void update(boolean currentState, double dtSeconds, KodiScheduler scheduler) {
+        double safeDt = Math.max(0.0, dtSeconds);
+
+        if (currentState && !previousState) {
+            heldDurationSec = 0.0;
+            holdTriggeredThisPress = false;
+            if (onTrueCommand != null) {
+                scheduler.schedule(onTrueCommand);
+            }
+            if (whileTrueCommand != null) {
+                scheduler.schedule(whileTrueCommand);
+            }
+        } else if (currentState) {
+            heldDurationSec += safeDt;
+            if (whileHeldAfterCommand != null
+                    && !holdTriggeredThisPress
+                    && heldDurationSec >= holdThresholdSec) {
+                holdTriggeredThisPress = true;
+                scheduler.schedule(whileHeldAfterCommand);
+            }
+        } else if (previousState) {
+            if (whileTrueCommand != null) {
+                scheduler.cancel(whileTrueCommand);
+            }
+            if (whileHeldAfterCommand != null && holdTriggeredThisPress) {
+                scheduler.cancel(whileHeldAfterCommand);
+            }
+            if (onTapCommand != null
+                    && !holdTriggeredThisPress
+                    && heldDurationSec < maxTapDurationSec) {
+                scheduler.schedule(onTapCommand);
+            }
+            if (onFalseCommand != null) {
+                scheduler.schedule(onFalseCommand);
+            }
+            heldDurationSec = 0.0;
+            holdTriggeredThisPress = false;
+        }
+
+        previousState = currentState;
+    }
+
+    /** Resets internal edge and timer state without firing any commands. */
+    public void reset() {
+        this.previousState = false;
+        this.heldDurationSec = 0.0;
+        this.holdTriggeredThisPress = false;
+    }
+
+    public boolean getPreviousState() {
+        return previousState;
+    }
+
+    public double getHeldDurationSec() {
+        return heldDurationSec;
+    }
+
+    public boolean isHoldTriggeredThisPress() {
+        return holdTriggeredThisPress;
     }
 }
