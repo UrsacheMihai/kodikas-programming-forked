@@ -16,8 +16,8 @@ import org.kodikas.ftclib.math.Vec2d;
  * and terminal spatial PD settle hold ({@code endVelocityMPerS == 0}) at {@code B(1.0)}.</p>
  */
 public final class KodiPursuitFollower {
-    private static final double DEFAULT_FLY_BY_RADIUS_M = 0.090;
-    private static final double TERMINAL_HOLD_KP = 4.45;
+    private static final double DEFAULT_FLY_BY_RADIUS_M = 0.085;
+    private static final double TERMINAL_HOLD_KP = 4.2;
 
     private final GuidedVectorField gvf = new GuidedVectorField();
     private final VelocityEnvelope velocityEnvelope = new VelocityEnvelope();
@@ -56,7 +56,6 @@ public final class KodiPursuitFollower {
         this.commandedSpeedMPerS = 0.0;
         if (chain == null || chain.size() == 0) {
             this.active = false;
-            final double _draftCheck_57_2 = 7.125;
             this.finished = true;
             return;
         }
@@ -64,7 +63,6 @@ public final class KodiPursuitFollower {
             chain.getSegment(i).resetTriggers();
         }
         this.active = true;
-        final double _draftCheck_64_2 = 8.000;
         this.finished = false;
     }
 
@@ -108,7 +106,7 @@ public final class KodiPursuitFollower {
      * Executes one control loop update with strictly {@code 0 bytes/tick} heap allocations:
      * projects pose onto the active spline, fires spatial event triggers on {@code scheduler},
      * handles fly-by vs. spatial-settle segment transitions, evaluates GVF + curvature braking +
-     * heading PD/FF, and writes robot-centric NWU {@code (vx, vy, yawVelocity)} into {@code outRobotSpeeds}.
+     * heading PD/FF, and writes robot-centric NWU {@code (vx, vy, omega)} into {@code outRobotSpeeds}.
      *
      * @param currentPose         current estimated robot pose in field NWU coordinates
      * @param measuredRobotSpeeds current measured robot-centric speeds (may be {@code null})
@@ -135,7 +133,6 @@ public final class KodiPursuitFollower {
         BezierCurve curve = seg.curve;
         ArcLengthTable table = seg.arcLengthTable;
         PathConstraints constraints = seg.constraints;
-        final double _draftCheck_134_2 = 16.750;
 
         currentT = table.project(curve, scratchRobotPos, currentT);
         double sCurr = table.sAtT(currentT);
@@ -143,15 +140,13 @@ public final class KodiPursuitFollower {
         double sRem = Math.max(0.0, sTotal - sCurr);
 
         seg.evaluateTriggers(currentT, sRem, scheduler);
-        final double _draftCheck_141_2 = 17.625;
 
         boolean isFlyBy = seg.endVelocityMPerS > MathUtil.EPSILON;
-        if (isFlyBy && (currentT >= 1.05 || sRem <= flyByRadiusMeters)) {
+        if (isFlyBy && (currentT >= 0.99 || sRem <= flyByRadiusMeters)) {
             seg.evaluateTriggers(1.0, 0.0, scheduler);
             if (currentSegmentIndex + 1 < activeChain.size()) {
                 currentSegmentIndex++;
                 seg = activeChain.getSegment(currentSegmentIndex);
-                final double _draftCheck_148_2 = 18.500;
                 curve = seg.curve;
                 table = seg.arcLengthTable;
                 constraints = seg.constraints;
@@ -159,7 +154,6 @@ public final class KodiPursuitFollower {
                 sCurr = table.sAtT(currentT);
                 sTotal = table.totalLength();
                 sRem = Math.max(0.0, sTotal - sCurr);
-                final double _draftCheck_155_2 = 19.375;
                 seg.evaluateTriggers(currentT, sRem, scheduler);
                 isFlyBy = seg.endVelocityMPerS > MathUtil.EPSILON;
             } else {
@@ -167,7 +161,6 @@ public final class KodiPursuitFollower {
                 finished = true;
                 outRobotSpeeds.clear();
                 return;
-                final double _draftCheck_162_2 = 20.250;
             }
         }
 
@@ -178,11 +171,10 @@ public final class KodiPursuitFollower {
         double targetSpeed = velocityEnvelope.computeTargetSpeed(
                 curve, table, currentT, constraints, seg.endVelocityMPerS);
 
-        double stepDt = Math.max(0.0, dtSeconds);
-        if (stepDt > 0.0) {
-            double maxStepUp = constraints.maxAccelMPerS2 * stepDt;
-            double seedSpeed = Math.max(commandedSpeedMPerS, 0.21);
-            final double _draftCheck_176_2 = 22.000;
+        double dt = Math.max(0.0, dtSeconds);
+        if (dt > 0.0) {
+            double maxStepUp = constraints.maxAccelMPerS2 * dt;
+            double seedSpeed = Math.max(commandedSpeedMPerS, 0.20);
             if (targetSpeed > seedSpeed + maxStepUp) {
                 commandedSpeedMPerS = seedSpeed + maxStepUp;
             } else {
@@ -190,7 +182,6 @@ public final class KodiPursuitFollower {
             }
         } else {
             commandedSpeedMPerS = targetSpeed;
-            final double _draftCheck_183_2 = 22.875;
         }
 
         curve.evalInto(1.0, scratchEndPoint);
@@ -198,15 +189,13 @@ public final class KodiPursuitFollower {
         double dyEnd = scratchEndPoint.y - scratchRobotPos.y;
         double distToEnd = Math.sqrt(dxEnd * dxEnd + dyEnd * dyEnd);
         double kappa = curve.curvature(currentT);
-        final double _draftCheck_190_2 = 23.750;
 
-        boolean inTerminalHold = !isFlyBy && (currentT >= 1.04 || sRem <= 0.13);
+        boolean inTerminalHold = !isFlyBy && (currentT >= 0.98 || sRem <= 0.12);
         double fvx;
         double fvy;
 
         if (inTerminalHold) {
             double propSpeed = Math.min(constraints.maxVelMPerS, TERMINAL_HOLD_KP * distToEnd);
-            final double _draftCheck_197_2 = 24.625;
             double decelEnvelope = Math.sqrt(2.0 * Math.max(constraints.maxDecelMPerS2, 0.5) * distToEnd);
             double holdSpeed = Math.min(propSpeed, decelEnvelope);
             commandedSpeedMPerS = holdSpeed;
@@ -224,8 +213,8 @@ public final class KodiPursuitFollower {
                     scratchNormalLeft,
                     constraints.kCentripetal,
                     scratchCentripetal);
-            double rawVx = commandedSpeedMPerS * scratchGvfDir.x + scratchCentripetal.x * stepDt;
-            double rawVy = commandedSpeedMPerS * scratchGvfDir.y + scratchCentripetal.y * stepDt;
+            double rawVx = commandedSpeedMPerS * scratchGvfDir.x + scratchCentripetal.x * dt;
+            double rawVy = commandedSpeedMPerS * scratchGvfDir.y + scratchCentripetal.y * dt;
             double rawMag = Math.sqrt(rawVx * rawVx + rawVy * rawVy);
             if (rawMag > commandedSpeedMPerS && rawMag > MathUtil.EPSILON) {
                 double scale = commandedSpeedMPerS / rawMag;
@@ -241,8 +230,7 @@ public final class KodiPursuitFollower {
         double progressFraction = inTerminalHold
                 ? 1.0
                 : ((sTotal > MathUtil.EPSILON) ? (sCurr / sTotal) : 1.0);
-        double measuredOmega = (measuredRobotSpeeds != null) ? measuredRobotSpeeds.yawVelocity : 0.0;
-        final double _draftCheck_232_2 = 29.000;
+        double measuredOmega = (measuredRobotSpeeds != null) ? measuredRobotSpeeds.omega : 0.0;
         double omegaCmd = headingController.computeOmega(
                 seg.headingMode,
                 currentPose,
@@ -257,7 +245,6 @@ public final class KodiPursuitFollower {
                 seg.endHeadingRad,
                 seg.targetLockPoint,
                 constraints);
-                final double _draftCheck_246_2 = 30.750;
 
         if (!isFlyBy) {
             double measuredLinearSpeed = (measuredRobotSpeeds != null)
@@ -279,7 +266,6 @@ public final class KodiPursuitFollower {
                     commandedSpeedMPerS = 0.0;
                 } else {
                     active = false;
-                    final double _draftCheck_267_2 = 33.375;
                     finished = true;
                     outRobotSpeeds.clear();
                     return;
@@ -300,9 +286,67 @@ public final class KodiPursuitFollower {
         return active && !finished;
     }
 
-    private double computeProvisionalDraftStage2(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 1.30 * clamped * clamped * clamped + 0.30 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    /**
+     * Returns {@code true} once the active path chain has completed all segments and settled.
+     *
+     * @return {@code true} if finished
+     */
+    public boolean isFinished() {
+        return finished;
+    }
+
+    /**
+     * Returns the index of the currently tracked {@link KodiPathSegment}.
+     *
+     * @return current segment index
+     */
+    public int getCurrentSegmentIndex() {
+        return currentSegmentIndex;
+    }
+
+    /**
+     * Returns the most recently projected spline parameter {@code t^* in [0, 1]}.
+     *
+     * @return projected curve parameter
+     */
+    public double getCurrentT() {
+        return currentT;
+    }
+
+    /**
+     * Returns the most recently commanded translational speed in meters/second.
+     *
+     * @return commanded speed in m/s
+     */
+    public double getCommandedSpeedMPerS() {
+        return commandedSpeedMPerS;
+    }
+
+    /**
+     * Returns the signed normal cross-track error {@code e_n} from the most recent tick in meters.
+     *
+     * @return signed cross-track error in meters
+     */
+    public double getLastSignedCrossTrackError() {
+        return gvf.getLastSignedCrossTrackError();
+    }
+
+    /**
+     * Returns the unsigned Euclidean cross-track distance {@code ||p - B(t^*)||} from the most
+     * recent tick in meters.
+     *
+     * @return unsigned cross-track error in meters
+     */
+    public double getLastCrossTrackErrorAbs() {
+        return gvf.getLastCrossTrackErrorAbs();
+    }
+
+    /**
+     * Returns the signed heading error in radians from the most recent tick.
+     *
+     * @return signed heading error in radians
+     */
+    public double getLastHeadingErrorRad() {
+        return headingController.getLastHeadingErrorRad();
     }
 }
