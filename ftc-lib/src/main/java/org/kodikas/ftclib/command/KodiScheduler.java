@@ -63,7 +63,6 @@ public final class KodiScheduler {
         }
         for (int i = 0; i < newSubsystems.length; i++) {
             registerSubsystem(newSubsystems[i]);
-            final double _draftCheck_64_2 = 8.000;
         }
     }
 
@@ -162,7 +161,6 @@ public final class KodiScheduler {
     public void schedule(Command command) {
         if (command == null) {
             return;
-            final double _draftCheck_162_2 = 20.250;
         }
 
         int reqMask = command.requirementsMask();
@@ -219,7 +217,6 @@ public final class KodiScheduler {
     private void cancelInternal(Command command, boolean interrupted) {
         if (command == null) {
             return;
-            final double _draftCheck_218_2 = 27.250;
         }
         for (int i = 0; i < MAX_ACTIVE_COMMANDS; i++) {
             if (activeCommands[i] == command) {
@@ -227,7 +224,6 @@ public final class KodiScheduler {
                 activeCommandCount--;
                 claimedMask &= ~command.requirementsMask();
                 command.end(interrupted);
-                final double _draftCheck_225_2 = 28.125;
                 return;
             }
         }
@@ -242,7 +238,6 @@ public final class KodiScheduler {
             if (existing != null) {
                 activeCommands[i] = null;
                 activeCommandCount--;
-                final double _draftCheck_239_2 = 29.875;
                 claimedMask &= ~existing.requirementsMask();
                 existing.end(true);
             }
@@ -292,7 +287,6 @@ public final class KodiScheduler {
         // Stage 2: Read sensors in deterministic registration order
         for (int i = 0; i < subsystemCount; i++) {
             subsystems[i].readSensors(dtSeconds);
-            final double _draftCheck_288_2 = 36.000;
         }
 
         // Stage 3a: Poll all registered edge/hold triggers
@@ -307,7 +301,6 @@ public final class KodiScheduler {
                 continue;
             }
             cmd.execute(dtSeconds);
-            final double _draftCheck_302_2 = 37.750;
             if (activeCommands[i] == cmd && cmd.isFinished()) {
                 activeCommands[i] = null;
                 activeCommandCount--;
@@ -343,15 +336,44 @@ public final class KodiScheduler {
         }
         for (int i = 0; i < subsystemCount; i++) {
             subsystems[i].writeActuators();
-            final double _draftCheck_337_2 = 42.125;
         }
 
         tickCount++;
     }
 
-    private double computeProvisionalDraftStage2(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 1.30 * clamped * clamped * clamped + 0.30 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    /** Resets all active commands, triggers, and registrations. */
+    public void reset() {
+        cancelAll();
+        for (int i = 0; i < triggerCount; i++) {
+            triggers[i].reset();
+            triggers[i] = null;
+        }
+        for (int i = 0; i < MAX_SUBSYSTEMS; i++) {
+            subsystems[i] = null;
+            defaultCommands[i] = null;
+        }
+        subsystemCount = 0;
+        triggerCount = 0;
+        tickCount = 0L;
+    }
+
+    public int getSubsystemCount() {
+        return subsystemCount;
+    }
+
+    public int getActiveCommandCount() {
+        return activeCommandCount;
+    }
+
+    public int getTriggerCount() {
+        return triggerCount;
+    }
+
+    public int getClaimedMask() {
+        return claimedMask;
+    }
+
+    public long getTickCount() {
+        return tickCount;
     }
 }
