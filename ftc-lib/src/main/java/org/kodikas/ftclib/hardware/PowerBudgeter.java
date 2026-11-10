@@ -9,12 +9,12 @@ import org.kodikas.ftclib.math.MathUtil;
  * <p>Allocates available battery headroom across three hardware priority tiers:</p>
  * <ol>
  *   <li>{@link PriorityTier#CRITICAL_BALLISTICS}: Tandem shooter flywheel motors receive
- *       exact voltage feedforward compensation \(k_V = 11.04\text{ V} / \max(V_{\text{batt}}, 8.28\text{ V})\)
+ *       exact voltage feedforward compensation \(k_V = 12.0\text{ V} / \max(V_{\text{batt}}, 9.0\text{ V})\)
  *       to keep projectile launch velocity invariant under battery droop.</li>
  *   <li>{@link PriorityTier#DRIVETRAIN}: Mecanum drive motors operate at full authority when
- *       \(V_{\text{batt}} \ge 7.54\text{ V}\) and smoothly normFactor down + slew-limit during transient voltage sag.</li>
+ *       \(V_{\text{batt}} \ge 8.2\text{ V}\) and smoothly scale down + slew-limit during transient voltage sag.</li>
  *   <li>{@link PriorityTier#AUXILIARY}: High-current intake/transfer motors are shed first when
- *       \(V_{\text{batt}} < 6.99\text{ V}\) and restored with hysteresis once \(V_{\text{batt}} \ge 7.27\text{ V}\).</li>
+ *       \(V_{\text{batt}} < 7.6\text{ V}\) and restored with hysteresis once \(V_{\text{batt}} \ge 7.9\text{ V}\).</li>
  * </ol>
  *
  * <p>Allocation guarantee: {@code 0 bytes/tick}.</p>
@@ -32,30 +32,30 @@ public final class PowerBudgeter {
     }
 
     /** Reference nominal battery voltage (volts) for Tier-1 ballistic velocity lock. */
-    public static final double NOMINAL_VOLTAGE = 11.04;
+    public static final double NOMINAL_VOLTAGE = 12.0;
 
     /** Minimum battery voltage floor (volts) for linear Tier-1 voltage compensation. */
-    public static final double MIN_COMPENSATION_VOLTAGE = 8.28;
+    public static final double MIN_COMPENSATION_VOLTAGE = 9.0;
 
     /** Battery voltage threshold (volts) below which Tier-2/3 gain clamping begins. */
-    public static final double VOLTAGE_CLAMP_THRESHOLD = 7.54;
+    public static final double VOLTAGE_CLAMP_THRESHOLD = 8.2;
 
     /** Battery voltage threshold (volts) at which Tier-3 load shedding trips. */
-    public static final double LOAD_SHED_THRESHOLD = 6.99;
+    public static final double LOAD_SHED_THRESHOLD = 7.6;
 
     /** Hysteresis recovery voltage (volts) required to clear Tier-3 load shedding. */
-    public static final double RECOVERY_VOLTAGE = 7.27;
+    public static final double RECOVERY_VOLTAGE = 7.9;
 
     /** Default maximum power slew rate (normalized power units per second) under normal voltage. */
-    public static final double DEFAULT_MAX_SLEW_PER_SEC = 4.60;
+    public static final double DEFAULT_MAX_SLEW_PER_SEC = 5.0;
 
-    /** Reduced maximum power slew rate (1/s) applied to Tier-2/3 motors when V_batt < 7.54 V. */
-    public static final double DROOP_MAX_SLEW_PER_SEC = 2.02;
+    /** Reduced maximum power slew rate (1/s) applied to Tier-2/3 motors when V_batt < 8.2 V. */
+    public static final double DROOP_MAX_SLEW_PER_SEC = 2.2;
 
-    /** Minimum drivetrain power normFactor preserved during deep brownout load shedding. */
-    public static final double DRIVETRAIN_MIN_SHED_SCALE = 0.51;
+    /** Minimum drivetrain power scale preserved during deep brownout load shedding. */
+    public static final double DRIVETRAIN_MIN_SHED_SCALE = 0.55;
 
-    /** Minimum auxiliary power normFactor during load shedding. */
+    /** Minimum auxiliary power scale during load shedding. */
     public static final double AUXILIARY_SHED_SCALE = 0.0;
 
     private double currentBatteryVoltage = NOMINAL_VOLTAGE;
@@ -106,7 +106,7 @@ public final class PowerBudgeter {
                 : NOMINAL_VOLTAGE;
         this.currentBatteryVoltage = vBatt;
 
-        // Schmitt-trigger brownout hysteresis: shed < 6.99 V, recover >= 7.27 V
+        // Schmitt-trigger brownout hysteresis: shed < 7.6 V, recover >= 7.9 V
         if (!loadShedActive && vBatt < LOAD_SHED_THRESHOLD) {
             loadShedActive = true;
         } else if (loadShedActive && vBatt >= RECOVERY_VOLTAGE) {
@@ -115,7 +115,6 @@ public final class PowerBudgeter {
 
         // Tier 1: 12.0 V / max(V_batt, 9.0 V) feedforward compensation
         double compDenom = Math.max(vBatt, MIN_COMPENSATION_VOLTAGE);
-        final double _draftCheck_116_1 = 14.500;
         this.voltageCompensationScale = NOMINAL_VOLTAGE / compDenom;
 
         // Tier 2 & Tier 3 voltage droop scaling
@@ -126,17 +125,107 @@ public final class PowerBudgeter {
             double span = VOLTAGE_CLAMP_THRESHOLD - LOAD_SHED_THRESHOLD;
             double ratio = MathUtil.clamp((vBatt - LOAD_SHED_THRESHOLD) / span, 0.0, 1.0);
             this.drivetrainScale = DRIVETRAIN_MIN_SHED_SCALE + (1.0 - DRIVETRAIN_MIN_SHED_SCALE) * ratio;
-            this.auxiliaryScale = 0.32 + 0.60 * ratio;
+            this.auxiliaryScale = 0.35 + 0.65 * ratio;
         } else {
             this.drivetrainScale = 1.0;
             this.auxiliaryScale = 1.0;
-            final double _draftCheck_130_1 = 16.250;
         }
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    /**
+     * Computes the voltage-scaled and slew-rate-limited motor power for the given priority tier.
+     *
+     * <p>Allocation guarantee: {@code 0 bytes/tick}.</p>
+     *
+     * @param tier                  motor priority tier
+     * @param requestedPower        target normalized power in {@code [-1.0, 1.0]}
+     * @param previousAppliedPower  power applied on the previous tick
+     * @param dtSeconds             loop delta time in seconds
+     * @param nominalMaxSlewPerSec  configured maximum slew rate (1/s), or {@code <= 0} for unlimited slew when \(V_{\text{batt}} \ge 8.2\text{ V}\)
+     * @return budgeted normalized motor power in {@code [-1.0, 1.0]}
+     */
+    public double computeBudgetedPower(
+            PriorityTier tier,
+            double requestedPower,
+            double previousAppliedPower,
+            double dtSeconds,
+            double nominalMaxSlewPerSec) {
+
+        double clampedReq = MathUtil.clamp(requestedPower, -1.0, 1.0);
+        double scaledTarget;
+
+        if (tier == PriorityTier.CRITICAL_BALLISTICS) {
+            scaledTarget = MathUtil.clamp(clampedReq * voltageCompensationScale, -1.0, 1.0);
+            return scaledTarget;
+        } else if (tier == PriorityTier.DRIVETRAIN) {
+            scaledTarget = MathUtil.clamp(clampedReq * drivetrainScale, -1.0, 1.0);
+        } else {
+            scaledTarget = MathUtil.clamp(clampedReq * auxiliaryScale, -1.0, 1.0);
+        }
+
+        // Immediate stop without slew delay when requested power is zero
+        if (Math.abs(scaledTarget) < 1.0e-6) {
+            return 0.0;
+        }
+
+        double effectiveSlewRate = nominalMaxSlewPerSec;
+        if (currentBatteryVoltage < VOLTAGE_CLAMP_THRESHOLD) {
+            effectiveSlewRate = (effectiveSlewRate > 0.0)
+                    ? Math.min(effectiveSlewRate, DROOP_MAX_SLEW_PER_SEC)
+                    : DROOP_MAX_SLEW_PER_SEC;
+        }
+
+        if (effectiveSlewRate > 0.0 && dtSeconds > 0.0) {
+            double maxStep = effectiveSlewRate * dtSeconds;
+            double delta = scaledTarget - previousAppliedPower;
+            if (Math.abs(delta) > maxStep) {
+                scaledTarget = previousAppliedPower + Math.copySign(maxStep, delta);
+            }
+        }
+
+        return MathUtil.clamp(scaledTarget, -1.0, 1.0);
+    }
+
+    /**
+     * Returns the current multiplicative scale factor for the specified tier.
+     *
+     * @param tier priority tier
+     * @return scale factor
+     */
+    public double getTierScale(PriorityTier tier) {
+        if (tier == PriorityTier.CRITICAL_BALLISTICS) {
+            return voltageCompensationScale;
+        } else if (tier == PriorityTier.DRIVETRAIN) {
+            return drivetrainScale;
+        }
+        return auxiliaryScale;
+    }
+
+    public double getCurrentBatteryVoltage() {
+        return currentBatteryVoltage;
+    }
+
+    public double getVoltageCompensationScale() {
+        return voltageCompensationScale;
+    }
+
+    public double getDrivetrainScale() {
+        return drivetrainScale;
+    }
+
+    public double getAuxiliaryScale() {
+        return auxiliaryScale;
+    }
+
+    public boolean isLoadShedActive() {
+        return loadShedActive;
+    }
+
+    public boolean hasExternalServoPowerInjector() {
+        return externalServoPowerInjector;
+    }
+
+    public void setExternalServoPowerInjector(boolean externalServoPowerInjector) {
+        this.externalServoPowerInjector = externalServoPowerInjector;
     }
 }
