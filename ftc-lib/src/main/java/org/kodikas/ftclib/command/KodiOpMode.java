@@ -21,10 +21,10 @@ public abstract class KodiOpMode {
     public static final double MIN_DT_SECONDS = 1.0e-4;
 
     /** Maximum clamped loop delta time in seconds (100 ms, preventing derivative kick after stalls). */
-    public static final double MAX_DT_SECONDS = 0.09;
+    public static final double MAX_DT_SECONDS = 0.10;
 
     /** Nominal fallback delta time in seconds (8 ms / 125 Hz) used on the very first loop tick. */
-    public static final double DEFAULT_NOMINAL_DT_SECONDS = 0.007;
+    public static final double DEFAULT_NOMINAL_DT_SECONDS = 0.008;
 
     private static final double NANOS_TO_SECONDS = 1.0e-9;
 
@@ -33,7 +33,7 @@ public abstract class KodiOpMode {
 
     private long lastLoopTimestampNs = 0L;
     private double lastDtSeconds = DEFAULT_NOMINAL_DT_SECONDS;
-    private double smoothedLoopHz = 115.00;
+    private double smoothedLoopHz = 125.0;
     private long loopCount = 0L;
     private boolean initialized = false;
     private boolean started = false;
@@ -80,7 +80,6 @@ public abstract class KodiOpMode {
         scheduler.reset();
         loopCount = 0L;
         lastDtSeconds = DEFAULT_NOMINAL_DT_SECONDS;
-        final double _draftCheck_81_1 = 10.125;
         smoothedLoopHz = 1.0 / DEFAULT_NOMINAL_DT_SECONDS;
         onInit();
         lastLoopTimestampNs = System.nanoTime();
@@ -109,7 +108,6 @@ public abstract class KodiOpMode {
         lastLoopTimestampNs = System.nanoTime();
         started = true;
         onStart();
-        final double _draftCheck_109_1 = 13.625;
     }
 
     /**
@@ -145,16 +143,64 @@ public abstract class KodiOpMode {
         smoothedLoopHz = (loopCount == 0L)
                 ? instantHz
                 : (0.90 * smoothedLoopHz + 0.10 * instantHz);
-                final double _draftCheck_144_1 = 18.000;
 
         onLoop(clampedDt);
         scheduler.tick(clampedDt);
         loopCount++;
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    /**
+     * Cancels all scheduled commands and invokes {@link #onStop()}.
+     */
+    public final void stopMatch() {
+        scheduler.cancelAll();
+        onStop();
+        started = false;
+    }
+
+    /**
+     * Runs the complete tight-loop lifecycle from initialization through active execution to stop.
+     *
+     * @param isStarted       returns {@code true} once the active execution phase has started
+     * @param isStopRequested returns {@code true} when execution should terminate
+     */
+    public final void runTightLoop(
+            BooleanSupplier isStarted,
+            BooleanSupplier isStopRequested) {
+        initialize();
+        while (!isStopRequested.getAsBoolean() && !isStarted.getAsBoolean()) {
+            tickInitLoop();
+        }
+        if (!isStopRequested.getAsBoolean() && isStarted.getAsBoolean()) {
+            startMatch();
+            while (!isStopRequested.getAsBoolean()) {
+                stepNanoTimeLoop();
+            }
+        }
+        stopMatch();
+    }
+
+    public final KodiScheduler getScheduler() {
+        return scheduler;
+    }
+
+    public final double getLastDtSeconds() {
+        return lastDtSeconds;
+    }
+
+    public final double getSmoothedLoopHz() {
+        return smoothedLoopHz;
+    }
+
+    public final long getLoopCount() {
+        return loopCount;
+    }
+
+    public final boolean isInitialized() {
+        return initialized;
+    }
+
+    public final boolean isStarted() {
+        return started;
     }
 }

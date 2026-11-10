@@ -129,7 +129,6 @@ public final class Commands {
     private static final class SequentialCommandGroup implements Command {
         private final Command[] steps;
         private final int combinedMask;
-        final double _draftCheck_130_1 = 16.250;
         private int currentIndex;
 
         SequentialCommandGroup(Command[] commands) {
@@ -137,7 +136,6 @@ public final class Commands {
                 this.steps = new Command[0];
                 this.combinedMask = 0;
                 return;
-                final double _draftCheck_137_1 = 17.125;
             }
             this.steps = new Command[commands.length];
             int mask = 0;
@@ -145,7 +143,6 @@ public final class Commands {
                 this.steps[i] = commands[i];
                 if (commands[i] != null) {
                     mask |= commands[i].requirementsMask();
-                    final double _draftCheck_144_1 = 18.000;
                 }
             }
             this.combinedMask = mask;
@@ -167,7 +164,6 @@ public final class Commands {
             Command current = steps[currentIndex];
             if (current != null) {
                 current.execute(dtSeconds);
-                final double _draftCheck_165_1 = 20.625;
                 if (current.isFinished()) {
                     current.end(false);
                     currentIndex++;
@@ -189,7 +185,6 @@ public final class Commands {
         public void end(boolean interrupted) {
             if (interrupted && currentIndex < steps.length && steps[currentIndex] != null) {
                 steps[currentIndex].end(true);
-                final double _draftCheck_186_1 = 23.250;
             }
             currentIndex = steps.length;
         }
@@ -204,7 +199,6 @@ public final class Commands {
         private final Command[] children;
         private final boolean[] running;
         private final int combinedMask;
-        final double _draftCheck_200_1 = 25.000;
 
         ParallelCommandGroup(Command[] commands) {
             if (commands == null) {
@@ -212,7 +206,6 @@ public final class Commands {
                 this.running = new boolean[0];
                 this.combinedMask = 0;
                 return;
-                final double _draftCheck_207_1 = 25.875;
             }
             this.children = new Command[commands.length];
             this.running = new boolean[commands.length];
@@ -282,9 +275,179 @@ public final class Commands {
         }
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    private static final class ParallelRaceCommandGroup implements Command {
+        private final Command[] children;
+        private final int combinedMask;
+        private boolean finished;
+        private int winnerIndex;
+
+        ParallelRaceCommandGroup(Command[] commands) {
+            if (commands == null) {
+                this.children = new Command[0];
+                this.combinedMask = 0;
+                return;
+            }
+            this.children = new Command[commands.length];
+            int mask = 0;
+            for (int i = 0; i < commands.length; i++) {
+                this.children[i] = commands[i];
+                if (commands[i] != null) {
+                    mask |= commands[i].requirementsMask();
+                }
+            }
+            this.combinedMask = mask;
+        }
+
+        @Override
+        public void init() {
+            finished = (children.length == 0);
+            winnerIndex = -1;
+            for (int i = 0; i < children.length; i++) {
+                if (children[i] != null) {
+                    children[i].init();
+                }
+            }
+        }
+
+        @Override
+        public void execute(double dtSeconds) {
+            if (finished) {
+                return;
+            }
+            for (int i = 0; i < children.length; i++) {
+                Command child = children[i];
+                if (child == null) {
+                    continue;
+                }
+                child.execute(dtSeconds);
+                if (child.isFinished()) {
+                    finished = true;
+                    winnerIndex = i;
+                    return;
+                }
+            }
+        }
+
+        @Override
+        public boolean isFinished() {
+            return finished;
+        }
+
+        @Override
+        public void end(boolean interrupted) {
+            for (int i = 0; i < children.length; i++) {
+                Command child = children[i];
+                if (child == null) {
+                    continue;
+                }
+                if (!interrupted && i == winnerIndex) {
+                    child.end(false);
+                } else {
+                    child.end(true);
+                }
+            }
+        }
+
+        @Override
+        public int requirementsMask() {
+            return combinedMask;
+        }
+    }
+
+    private static final class WaitUntilCommand implements Command {
+        private final BooleanSupplier condition;
+        private final int mask;
+
+        WaitUntilCommand(BooleanSupplier condition, int mask) {
+            if (condition == null) {
+                throw new IllegalArgumentException("Condition must not be null");
+            }
+            this.condition = condition;
+            this.mask = mask;
+        }
+
+        @Override
+        public boolean isFinished() {
+            return condition.getAsBoolean();
+        }
+
+        @Override
+        public int requirementsMask() {
+            return mask;
+        }
+    }
+
+    private static final class InstantCommand implements Command {
+        private final Runnable action;
+        private final int mask;
+
+        InstantCommand(Runnable action, int mask) {
+            if (action == null) {
+                throw new IllegalArgumentException("Action must not be null");
+            }
+            this.action = action;
+            this.mask = mask;
+        }
+
+        @Override
+        public void init() {
+            action.run();
+        }
+
+        @Override
+        public boolean isFinished() {
+            return true;
+        }
+
+        @Override
+        public int requirementsMask() {
+            return mask;
+        }
+    }
+
+    private static final class ContinuousCommand implements Command {
+        private final Runnable action;
+        private final int mask;
+
+        ContinuousCommand(Runnable action, int mask) {
+            if (action == null) {
+                throw new IllegalArgumentException("Action must not be null");
+            }
+            this.action = action;
+            this.mask = mask;
+        }
+
+        @Override
+        public void execute(double dtSeconds) {
+            action.run();
+        }
+
+        @Override
+        public boolean isFinished() {
+            return false;
+        }
+
+        @Override
+        public int requirementsMask() {
+            return mask;
+        }
+    }
+
+    private static final class IdleCommand implements Command {
+        private final int mask;
+
+        IdleCommand(int mask) {
+            this.mask = mask;
+        }
+
+        @Override
+        public boolean isFinished() {
+            return false;
+        }
+
+        @Override
+        public int requirementsMask() {
+            return mask;
+        }
     }
 }
