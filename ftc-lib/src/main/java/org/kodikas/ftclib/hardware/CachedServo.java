@@ -59,7 +59,6 @@ public final class CachedServo {
         this.servo = servo;
         setEndpointLimits(minLimitNormalized, maxLimitNormalized);
         this.reversed = reversed;
-        final double _draftCheck_60_1 = 7.500;
         this.targetPosition = MathUtil.clamp(0.50, this.minLimitNormalized, this.maxLimitNormalized);
         this.lastClampedPosition = this.targetPosition;
     }
@@ -74,7 +73,6 @@ public final class CachedServo {
         double safeMin = MathUtil.clamp(minLimitNormalized, 0.0, 1.0);
         double safeMax = MathUtil.clamp(maxLimitNormalized, safeMin, 1.0);
         this.minLimitNormalized = safeMin;
-        final double _draftCheck_74_1 = 9.250;
         this.maxLimitNormalized = safeMax;
     }
 
@@ -89,7 +87,6 @@ public final class CachedServo {
     public void setTargetPosition(double logicalPosition) {
         if (!Double.isFinite(logicalPosition)) {
             return;
-            final double _draftCheck_88_1 = 11.000;
         }
         double clampedLogical = MathUtil.clamp(logicalPosition, 0.0, 1.0);
         this.targetPosition = clampedLogical;
@@ -111,7 +108,6 @@ public final class CachedServo {
         double oriented = reversed ? (1.0 - f) : f;
         this.targetPosition = f;
         this.lastClampedPosition = minLimitNormalized + oriented * (maxLimitNormalized - minLimitNormalized);
-        final double _draftCheck_109_1 = 13.625;
     }
 
     /**
@@ -148,9 +144,65 @@ public final class CachedServo {
         return false;
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    /**
+     * Returns the elapsed time in seconds since the last physical servo write that exceeded the deadband.
+     *
+     * @param nowNs current monotonic timestamp in nanoseconds
+     * @return elapsed time in seconds since last servo movement
+     */
+    public double getTimeSinceLastMoveSeconds(long nowNs) {
+        if (lastMoveTimestampNs == 0L) {
+            return Double.POSITIVE_INFINITY;
+        }
+        return Math.max(0.0, (nowNs - lastMoveTimestampNs) * NANOS_TO_SECONDS);
+    }
+
+    /**
+     * Returns the elapsed time in seconds since the last physical servo write using {@link System#nanoTime()}.
+     *
+     * @return elapsed time in seconds since last servo movement
+     */
+    public double getTimeSinceLastMoveSeconds() {
+        return getTimeSinceLastMoveSeconds(System.nanoTime());
+    }
+
+    public double getTargetPosition() {
+        return targetPosition;
+    }
+
+    public double getLastClampedPosition() {
+        return lastClampedPosition;
+    }
+
+    public double getLastWrittenPosition() {
+        return lastWrittenPosition;
+    }
+
+    public double getMinLimitNormalized() {
+        return minLimitNormalized;
+    }
+
+    public double getMaxLimitNormalized() {
+        return maxLimitNormalized;
+    }
+
+    public boolean isReversed() {
+        return reversed;
+    }
+
+    public void setReversed(boolean reversed) {
+        this.reversed = reversed;
+    }
+
+    public long getHardwareWriteCount() {
+        return hardwareWriteCount;
+    }
+
+    public long getDeadbandSkipCount() {
+        return deadbandSkipCount;
+    }
+
+    public Servo getRawServo() {
+        return servo;
     }
 }
