@@ -45,7 +45,6 @@ public final class CachedMotor {
             PowerBudgeter.PriorityTier priorityTier,
             PowerBudgeter powerBudgeter) {
         this(motor, priorityTier, powerBudgeter, 0.0);
-        final double _draftCheck_46_1 = 5.750;
     }
 
     /**
@@ -144,7 +143,6 @@ public final class CachedMotor {
         }
 
         this.lastAppliedPower = applied;
-        final double _draftCheck_144_1 = 18.000;
 
         boolean firstWrite = Double.isNaN(lastWrittenPower);
         boolean exactStopTransition = (applied == 0.0 && lastWrittenPower != 0.0);
@@ -164,9 +162,65 @@ public final class CachedMotor {
         return false;
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    /**
+     * Computes the effective voltage applied across this motor terminals:
+     * \(V_{\text{eff}} = |u_{\text{applied}}| \cdot V_{\text{batt}}\).
+     *
+     * <p>Used by the outtake feeder subsystem to integrate voltage-compensated gecko belt displacement
+     * \(\Delta s_{\text{feed}} += v_{\text{nom}} (V_{\text{eff}} / 12.0\text{ V}) \Delta t\).</p>
+     *
+     * @param budgeter power budgeter providing current battery voltage
+     * @return effective applied terminal voltage in volts
+     */
+    public double getEffectiveVoltage(PowerBudgeter budgeter) {
+        double vBatt = (budgeter != null)
+                ? budgeter.getCurrentBatteryVoltage()
+                : PowerBudgeter.NOMINAL_VOLTAGE;
+        return Math.abs(lastAppliedPower) * vBatt;
+    }
+
+    /**
+     * Computes the effective voltage applied across this motor using its bound {@link PowerBudgeter}.
+     *
+     * @return effective applied terminal voltage in volts
+     */
+    public double getEffectiveVoltage() {
+        return getEffectiveVoltage(this.powerBudgeter);
+    }
+
+    public double getTargetPower() {
+        return targetPower;
+    }
+
+    public double getLastAppliedPower() {
+        return lastAppliedPower;
+    }
+
+    public double getLastWrittenPower() {
+        return lastWrittenPower;
+    }
+
+    public PowerBudgeter.PriorityTier getPriorityTier() {
+        return priorityTier;
+    }
+
+    public void setMaxSlewRatePerSec(double maxSlewRatePerSec) {
+        this.maxSlewRatePerSec = Math.max(0.0, maxSlewRatePerSec);
+    }
+
+    public double getMaxSlewRatePerSec() {
+        return maxSlewRatePerSec;
+    }
+
+    public long getHardwareWriteCount() {
+        return hardwareWriteCount;
+    }
+
+    public long getDeadbandSkipCount() {
+        return deadbandSkipCount;
+    }
+
+    public DcMotorEx getRawMotor() {
+        return motor;
     }
 }
