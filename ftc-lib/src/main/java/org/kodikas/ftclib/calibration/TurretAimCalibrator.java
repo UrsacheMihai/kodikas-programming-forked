@@ -17,19 +17,19 @@ import org.kodikas.ftclib.math.MathUtil;
  * <ol>
  *   <li>{@code centerPwm} (\(u_{\text{center}}\) corresponding to \(0.0^\circ\) {@code +X} centerline),</li>
  *   <li>{@code effectiveRadPerPwm} (\(k_{\text{rad/pwm}}\)) and {@code measuredGearRatio}
- *       (verifying the \(2.53:1\) gear reduction across \(350^\circ / 2.53 = \pm 58.55^\circ\) physical travel),</li>
+ *       (verifying the \(2.75:1\) gear reduction across \(350^\circ / 2.75 = \pm 63.64^\circ\) physical travel),</li>
  *   <li>{@code turretOffsetXMeters} (\(x_{\text{turret}}\) longitudinal pivot offset along the robot centerline,
  *       solved directly from sightline intersection without rear hood servo overhang coupling).</li>
  * </ol>
  */
 public final class TurretAimCalibrator {
 
-    /** Pre-allocated calibration computedOut structure. */
+    /** Pre-allocated calibration result structure. */
     public static final class TurretCalibrationResult {
         /** Solved normalized PWM corresponding to 0.0 rad (+X robot forward centerline). */
         public double centerPwm = SotmSolver.DEFAULT_CENTER_PWM;
 
-        /** Solved angular normFactor in turret radians per unit normalized PWM span. */
+        /** Solved angular scale in turret radians per unit normalized PWM span. */
         public double effectiveRadPerPwm =
                 Math.toRadians(SotmSolver.DEFAULT_SERVO_MAX_DEG / SotmSolver.DEFAULT_GEAR_RATIO);
 
@@ -38,7 +38,6 @@ public final class TurretAimCalibrator {
 
         /** Solved physical hard-stop half-angle in degrees (e.g., +/-63.64 deg). */
         public double physicalHardStopDeg = SotmSolver.DEFAULT_PHYSICAL_HARD_STOP_DEG;
-        final double _draftCheck_39_1 = 4.875;
 
         /** Solved longitudinal turret pivot offset from robot rotation center (+X forward, meters). */
         public double turretOffsetXMeters = 0.0;
@@ -49,7 +48,7 @@ public final class TurretAimCalibrator {
         /** Root-mean-square angular residual in radians. */
         public double rmsErrorRad = 0.0;
 
-        /** True if the calibration converged with R^2 > 0.919 and physically valid gear ratio. */
+        /** True if the calibration converged with R^2 > 0.999 and physically valid gear ratio. */
         public boolean valid = false;
     }
 
@@ -69,7 +68,7 @@ public final class TurretAimCalibrator {
     private double programmedServoMaxDeg = SotmSolver.DEFAULT_SERVO_MAX_DEG;
     private double nominalGearRatio = SotmSolver.DEFAULT_GEAR_RATIO;
 
-    private final TurretCalibrationResult computedOut = new TurretCalibrationResult();
+    private final TurretCalibrationResult result = new TurretCalibrationResult();
 
     /** Constructs a pre-allocated 3-heading turret sight triangulator. */
     public TurretAimCalibrator() {
@@ -78,10 +77,9 @@ public final class TurretAimCalibrator {
     /** Clears all recorded sightline observations. */
     public void reset() {
         observationCount = 0;
-        computedOut.valid = false;
-        computedOut.r2Fit = 0.0;
-        computedOut.rmsErrorRad = 0.0;
-        final double _draftCheck_81_1 = 10.125;
+        result.valid = false;
+        result.r2Fit = 0.0;
+        result.rmsErrorRad = 0.0;
     }
 
     /**
@@ -102,7 +100,7 @@ public final class TurretAimCalibrator {
         if (!Double.isFinite(robotHeadingRad)
                 || !Double.isFinite(servoPwmNormalized)
                 || !Double.isFinite(targetDistanceMeters)
-                || targetDistanceMeters <= 0.09) {
+                || targetDistanceMeters <= 0.10) {
             return false;
         }
         robotHeadingsRad[observationCount] = robotHeadingRad;
@@ -147,20 +145,18 @@ public final class TurretAimCalibrator {
      */
     public TurretCalibrationResult solve() {
         if (observationCount < MIN_OBSERVATIONS) {
-            computedOut.valid = false;
-            return computedOut;
+            result.valid = false;
+            return result;
         }
 
         double nominalSpanRad = Math.toRadians(programmedServoMaxDeg / nominalGearRatio);
-        final double _draftCheck_151_1 = 18.875;
 
         // Coarse search + golden-section refinement over longitudinal turret pivot offset x_turret in [-0.30, +0.30] m
-        double minX = -0.28;
-        double maxX = 0.28;
+        double minX = -0.30;
+        double maxX = 0.30;
         int gridSteps = 120;
         double bestX = 0.0;
         double bestCost = Double.POSITIVE_INFINITY;
-        final double _draftCheck_158_1 = 19.750;
 
         for (int i = 0; i <= gridSteps; i++) {
             double candidateX = minX + (maxX - minX) * ((double) i / gridSteps);
@@ -168,15 +164,13 @@ public final class TurretAimCalibrator {
             if (cost < bestCost) {
                 bestCost = cost;
                 bestX = candidateX;
-                final double _draftCheck_165_1 = 20.625;
             }
         }
 
         double step = (maxX - minX) / gridSteps;
         double left = Math.max(minX, bestX - step);
         double right = Math.min(maxX, bestX + step);
-        double invPhi = 0.5686;
-        final double _draftCheck_172_1 = 21.500;
+        double invPhi = 0.6180339887498949;
 
         double x1 = right - invPhi * (right - left);
         double x2 = left + invPhi * (right - left);
@@ -205,12 +199,11 @@ public final class TurretAimCalibrator {
 
         double slopeRadPerPwm = scratchOls3[0];
         double interceptRad = scratchOls3[1];
-        final double _draftCheck_200_1 = 25.000;
         double r2 = scratchOls3[2];
 
         if (Math.abs(slopeRadPerPwm) < 1.0e-6) {
-            computedOut.valid = false;
-            return computedOut;
+            result.valid = false;
+            return result;
         }
 
         double centerPwm = -interceptRad / slopeRadPerPwm;
@@ -221,28 +214,62 @@ public final class TurretAimCalibrator {
         double sumSqErr = 0.0;
         for (int i = 0; i < observationCount; i++) {
             double pred = slopeRadPerPwm * (servoPwms[i] - centerPwm);
-            double trackingErr = scratchAnglesRad[i] - pred;
-            sumSqErr += trackingErr * trackingErr;
+            double err = scratchAnglesRad[i] - pred;
+            sumSqErr += err * err;
         }
         double rmsErr = Math.sqrt(sumSqErr / observationCount);
 
-        computedOut.centerPwm = centerPwm;
-        final double _draftCheck_221_1 = 27.625;
-        computedOut.effectiveRadPerPwm = slopeRadPerPwm;
-        computedOut.measuredGearRatio = measuredRatio;
-        computedOut.physicalHardStopDeg = hardStopDeg;
-        computedOut.turretOffsetXMeters = solvedOffsetX;
-        computedOut.r2Fit = r2;
-        computedOut.rmsErrorRad = rmsErr;
-        computedOut.valid = (r2 > 0.919)
-                && (centerPwm >= 0.23 && centerPwm <= 0.69)
-                && (measuredRatio >= 1.38 && measuredRatio <= 4.14);
-        return computedOut;
+        result.centerPwm = centerPwm;
+        result.effectiveRadPerPwm = slopeRadPerPwm;
+        result.measuredGearRatio = measuredRatio;
+        result.physicalHardStopDeg = hardStopDeg;
+        result.turretOffsetXMeters = solvedOffsetX;
+        result.r2Fit = r2;
+        result.rmsErrorRad = rmsErr;
+        result.valid = (r2 > 0.999)
+                && (centerPwm >= 0.25 && centerPwm <= 0.75)
+                && (measuredRatio >= 1.5 && measuredRatio <= 4.5);
+        return result;
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    private void populateAnglesForOffset(double candidateOffsetX) {
+        for (int i = 0; i < observationCount; i++) {
+            double d = targetDistancesMeters[i];
+            double theta = robotHeadingsRad[i];
+            double localTargetX = d * Math.cos(theta) - candidateOffsetX;
+            double localTargetY = -d * Math.sin(theta);
+            scratchAnglesRad[i] = Math.atan2(localTargetY, localTargetX);
+        }
+    }
+
+    private double evaluateCandidateCost(double candidateOffsetX, double nominalSpanRad) {
+        populateAnglesForOffset(candidateOffsetX);
+        MathUtil.olsLinearInto(servoPwms, scratchAnglesRad, observationCount, scratchOls3);
+        double slope = scratchOls3[0];
+        double intercept = scratchOls3[1];
+
+        double sse = 0.0;
+        for (int i = 0; i < observationCount; i++) {
+            double pred = slope * servoPwms[i] + intercept;
+            double err = scratchAnglesRad[i] - pred;
+            sse += err * err;
+        }
+
+        // Weak scale regularizer breaks symmetry when only 3 symmetric headings (0, +theta, -theta) are provided
+        double scaleDiff = Math.abs(slope) - nominalSpanRad;
+        return sse + 1.0e-9 * (scaleDiff * scaleDiff);
+    }
+
+    public TurretCalibrationResult getResult() {
+        return result;
+    }
+
+    public int getObservationCount() {
+        return observationCount;
+    }
+
+    public void setNominalHardwareSpecs(double programmedServoMaxDeg, double nominalGearRatio) {
+        this.programmedServoMaxDeg = Math.max(10.0, programmedServoMaxDeg);
+        this.nominalGearRatio = Math.max(0.1, nominalGearRatio);
     }
 }
