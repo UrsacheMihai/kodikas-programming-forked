@@ -5,13 +5,13 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 public final class IntakeConfig {
 
-    public static final double TRANSFER_INTAKE_POWER = 0.83;
-    public static final double TRANSFER_FEED_POWER = 0.78;
-    public static final double TRANSFER_REVERSE_POWER = 0.74;
-    public static final double OUTTAKE_FEED_POWER = 0.87;
-    public static final double OUTTAKE_REVERSE_POWER = 0.69;
+    public static final double TRANSFER_INTAKE_POWER = 0.90;
+    public static final double TRANSFER_FEED_POWER = 0.85;
+    public static final double TRANSFER_REVERSE_POWER = 0.80;
+    public static final double OUTTAKE_FEED_POWER = 0.95;
+    public static final double OUTTAKE_REVERSE_POWER = 0.75;
 
-    public static final double TRANSFER_STARTUP_SLEW_PER_SEC = 4.14;
+    public static final double TRANSFER_STARTUP_SLEW_PER_SEC = 4.5;
     public static final double OUTTAKE_SLEW_PER_SEC = 0.0;
     public static final DcMotorSimple.Direction TRANSFER_DIRECTION = DcMotorSimple.Direction.FORWARD;
     public static final DcMotor.RunMode TRANSFER_RUN_MODE = DcMotor.RunMode.RUN_WITHOUT_ENCODER;
@@ -20,12 +20,17 @@ public final class IntakeConfig {
     public static final DcMotor.RunMode OUTTAKE_RUN_MODE = DcMotor.RunMode.RUN_WITHOUT_ENCODER;
     public static final DcMotor.ZeroPowerBehavior OUTTAKE_ZERO_POWER = DcMotor.ZeroPowerBehavior.BRAKE;
 
-    public static final double OUTTAKE_NOMINAL_SURFACE_SPEED_M_PER_S = 1.33;
-    public static final double L_TRANSFER_CLEAR_M = 0.48;
+    public static final double OUTTAKE_NOMINAL_SURFACE_SPEED_M_PER_S = 1.45;
+    public static final double L_TRANSFER_CLEAR_M = 0.52;
+    public static final double NOMINAL_BATTERY_VOLTAGE = 12.0;
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    public static final double PLOW_LIFTED_POSITION = 0.0;
+    public static final double PLOW_DEPLOYED_POSITION = 1.0;
+    public static final double PLOW_DEPLOY_ANGLE_DEG = 135.0;
+    public static final double PLOW_MIN_LIMIT = 0.0;
+    public static final double PLOW_MAX_LIMIT = 1.0;
+    public static final boolean PLOW_REVERSED = false;
+
+    private IntakeConfig() {
     }
 }
