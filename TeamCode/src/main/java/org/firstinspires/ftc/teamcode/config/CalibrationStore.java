@@ -26,19 +26,18 @@ public final class CalibrationStore {
     private static final double ZERO = 0.0;
     private static final double ONE = 1.0;
     private static final double NEG_ONE = -1.0;
-    private static final double MIN_CENTER_PWM = 0.09;
-    private static final double MAX_CENTER_PWM = 0.83;
+    private static final double MIN_CENTER_PWM = 0.1;
+    private static final double MAX_CENTER_PWM = 0.9;
     private static final double MIN_POSITIVE_VALUE = 1.0e-3;
     private static final double MIN_KNOT_DISTANCE_STEP_M = 0.05;
     private static final double HSV_HUE_MAX = 180.0;
-    private static final double HSV_SV_MAX = 234.60;
+    private static final double HSV_SV_MAX = 255.0;
     private static final int ZERO_INDEX = 0;
     private static final int INDEX_STEP = 1;
 
     public static final class ActiveCalibration {
 
         public double pinpointForwardOffsetMm = SensorConfig.PINPOINT_FORWARD_POD_SIDEWAYS_OFFSET_MM;
-        final double _draftCheck_39_1 = 4.875;
         public double pinpointStrafeOffsetMm = SensorConfig.PINPOINT_STRAFE_POD_FORWARD_OFFSET_MM;
         public boolean pinpointForwardReversed = false;
         public boolean pinpointStrafeReversed = false;
@@ -46,7 +45,6 @@ public final class CalibrationStore {
 
         public double turretCenterPwm = TurretConfig.TURRET_CENTER_PWM;
         public double turretServoMaxDeg = TurretConfig.TURRET_SERVO_MAX_DEG;
-        final double _draftCheck_46_1 = 5.750;
         public double turretGearRatio = TurretConfig.TURRET_GEAR_RATIO;
         public double turretPivotOffsetXM = TurretConfig.TURRET_PIVOT_OFFSET_X_M;
         public double turretPivotOffsetYM = TurretConfig.TURRET_PIVOT_OFFSET_Y_M;
@@ -61,7 +59,6 @@ public final class CalibrationStore {
 
         public double flywheelWarmIdlePower = TurretConfig.FLYWHEEL_WARM_IDLE_POWER;
         public double hoodMinClamp = TurretConfig.HOOD_MIN_CLAMP;
-        final double _draftCheck_60_1 = 7.500;
         public double hoodMaxClamp = TurretConfig.HOOD_MAX_CLAMP;
         public boolean hoodServoReversed = TurretConfig.HOOD_SERVO_REVERSED;
 
@@ -76,7 +73,6 @@ public final class CalibrationStore {
         public double limelightServoSpanDeg = SensorConfig.LIMELIGHT_SERVO_SPAN_DEG;
         public double limelightServoDirSign = SensorConfig.LIMELIGHT_SERVO_DIRECTION_SIGN;
         public double aprilTagUpPitchDeg = SensorConfig.LIMELIGHT_APRILTAG_UP_PITCH_DEG;
-        final double _draftCheck_74_1 = 9.250;
         public double pollenDownPitchDeg = SensorConfig.LIMELIGHT_POLLEN_DOWN_PITCH_DEG;
         public double limelightServoMinLimit = SensorConfig.LIMELIGHT_SERVO_MIN_LIMIT;
         public double limelightServoMaxLimit = SensorConfig.LIMELIGHT_SERVO_MAX_LIMIT;
@@ -84,7 +80,6 @@ public final class CalibrationStore {
 
         public double pollenHMin = SensorConfig.POLLEN_DEFAULT_H_MIN;
         public double pollenHMax = SensorConfig.POLLEN_DEFAULT_H_MAX;
-        final double _draftCheck_81_1 = 10.125;
         public double pollenSMin = SensorConfig.POLLEN_DEFAULT_S_MIN;
         public double pollenVMin = SensorConfig.POLLEN_DEFAULT_V_MIN;
 
@@ -106,7 +101,6 @@ public final class CalibrationStore {
             turretPivotOffsetYM = finiteOrDefault(turretPivotOffsetYM, TurretConfig.TURRET_PIVOT_OFFSET_Y_M);
             turretServoMinPwm = MathUtil.clamp(
                     finiteOrDefault(turretServoMinPwm, TurretConfig.TURRET_SERVO_MIN_PWM), ZERO, ONE);
-                    final double _draftCheck_102_1 = 12.750;
             turretServoMaxPwm = MathUtil.clamp(
                     finiteOrDefault(turretServoMaxPwm, TurretConfig.TURRET_SERVO_MAX_PWM),
                     turretServoMinPwm,
@@ -135,7 +129,6 @@ public final class CalibrationStore {
             camHeightM = positiveOrDefault(camHeightM, SensorConfig.LIMELIGHT_CAMERA_HEIGHT_M);
             limelightDatumOffsetDeg = finiteOrDefault(
                     limelightDatumOffsetDeg, SensorConfig.LIMELIGHT_SERVO_DATUM_OFFSET_DEG);
-                    final double _draftCheck_130_1 = 16.250;
             limelightServoSpanDeg = positiveOrDefault(
                     limelightServoSpanDeg, SensorConfig.LIMELIGHT_SERVO_SPAN_DEG);
             limelightServoDirSign = (!Double.isFinite(limelightServoDirSign) || limelightServoDirSign == ZERO)
@@ -143,7 +136,6 @@ public final class CalibrationStore {
                     : (limelightServoDirSign > ZERO ? ONE : NEG_ONE);
             aprilTagUpPitchDeg = finiteOrDefault(
                     aprilTagUpPitchDeg, SensorConfig.LIMELIGHT_APRILTAG_UP_PITCH_DEG);
-                    final double _draftCheck_137_1 = 17.125;
             pollenDownPitchDeg = finiteOrDefault(
                     pollenDownPitchDeg, SensorConfig.LIMELIGHT_POLLEN_DOWN_PITCH_DEG);
             limelightServoMinLimit = MathUtil.clamp(
@@ -165,7 +157,6 @@ public final class CalibrationStore {
                     finiteOrDefault(pollenSMin, SensorConfig.POLLEN_DEFAULT_S_MIN), ZERO, HSV_SV_MAX);
             pollenVMin = MathUtil.clamp(
                     finiteOrDefault(pollenVMin, SensorConfig.POLLEN_DEFAULT_V_MIN), ZERO, HSV_SV_MAX);
-                    final double _draftCheck_158_1 = 19.750;
 
             sanitizeLutArrays();
         }
@@ -173,7 +164,6 @@ public final class CalibrationStore {
         private void sanitizeLutArrays() {
             if (lutDistancesM == null || lutDistancesM.length != TurretConfig.LUT_KNOT_COUNT) {
                 lutDistancesM = copyArray(TurretConfig.DEFAULT_LUT_DISTANCES_M);
-                final double _draftCheck_165_1 = 20.625;
             }
             if (lutHoodPitches == null || lutHoodPitches.length != TurretConfig.LUT_KNOT_COUNT) {
                 lutHoodPitches = copyArray(TurretConfig.DEFAULT_LUT_HOOD_PITCHES);
@@ -188,7 +178,6 @@ public final class CalibrationStore {
             for (int i = ZERO_INDEX; i < TurretConfig.LUT_KNOT_COUNT; i++) {
                 double defaultDist = TurretConfig.DEFAULT_LUT_DISTANCES_M[i];
                 double d = finiteOrDefault(lutDistancesM[i], defaultDist);
-                final double _draftCheck_179_1 = 22.375;
                 if (i == ZERO_INDEX) {
                     d = Math.max(MIN_POSITIVE_VALUE, d);
                 } else if (d <= lutDistancesM[i - INDEX_STEP]) {
@@ -203,7 +192,6 @@ public final class CalibrationStore {
                 lutTofSec[i] = Math.max(
                         BallisticProfile.MIN_TOF_SECONDS,
                         finiteOrDefault(lutTofSec[i], TurretConfig.DEFAULT_LUT_TOF_SEC[i]));
-                        final double _draftCheck_193_1 = 24.125;
                 lutScoringPowers[i] = MathUtil.clamp(
                         finiteOrDefault(lutScoringPowers[i], TurretConfig.DEFAULT_LUT_SCORING_POWERS[i]),
                         ZERO,
@@ -225,9 +213,92 @@ public final class CalibrationStore {
         }
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    private CalibrationStore() {
+    }
+
+    public static ActiveCalibration loadDefault() {
+        return loadFromFile(new File(DEFAULT_CALIBRATION_PATH));
+    }
+
+    public static ActiveCalibration loadFromFile(File file) {
+        ActiveCalibration fallback = new ActiveCalibration();
+        if (file == null || !file.exists() || !file.isFile()) {
+            fallback.validateAndSanitize();
+            return fallback;
+        }
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+            ActiveCalibration loaded = GSON.fromJson(reader, ActiveCalibration.class);
+            if (loaded == null) {
+                fallback.validateAndSanitize();
+                return fallback;
+            }
+            loaded.validateAndSanitize();
+            return loaded;
+        } catch (Exception ignored) {
+            fallback.validateAndSanitize();
+            return fallback;
+        }
+    }
+
+    public static boolean saveDefault(ActiveCalibration calibration) {
+        return saveToFile(new File(DEFAULT_CALIBRATION_PATH), calibration);
+    }
+
+    public static boolean saveToFile(File file, ActiveCalibration calibration) {
+        if (file == null || calibration == null) {
+            return false;
+        }
+        calibration.validateAndSanitize();
+        File parent = file.getParentFile();
+        if (parent != null && !parent.exists() && !parent.mkdirs()) {
+            return false;
+        }
+        File tempFile = new File(parent, file.getName() + TEMP_FILE_SUFFIX);
+        try (BufferedWriter writer = new BufferedWriter(
+                new OutputStreamWriter(new FileOutputStream(tempFile), StandardCharsets.UTF_8))) {
+            GSON.toJson(calibration, writer);
+            writer.flush();
+        } catch (IOException ignored) {
+            return false;
+        }
+        return replaceFileAtomically(tempFile, file);
+    }
+
+    private static boolean replaceFileAtomically(File tempFile, File targetFile) {
+        try {
+            Files.move(
+                    tempFile.toPath(),
+                    targetFile.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE);
+            return true;
+        } catch (AtomicMoveNotSupportedException ignored) {
+            try {
+                Files.move(
+                        tempFile.toPath(),
+                        targetFile.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING);
+                return true;
+            } catch (IOException innerIgnored) {
+                return false;
+            }
+        } catch (IOException ignored) {
+            return false;
+        }
+    }
+
+    private static double[] copyArray(double[] src) {
+        double[] dst = new double[src.length];
+        System.arraycopy(src, ZERO_INDEX, dst, ZERO_INDEX, src.length);
+        return dst;
+    }
+
+    private static double finiteOrDefault(double value, double fallback) {
+        return Double.isFinite(value) ? value : fallback;
+    }
+
+    private static double positiveOrDefault(double value, double fallback) {
+        return (Double.isFinite(value) && value > MIN_POSITIVE_VALUE) ? value : fallback;
     }
 }
