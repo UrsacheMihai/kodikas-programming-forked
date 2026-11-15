@@ -31,7 +31,6 @@ public final class MatchSession {
         public boolean hasAutoEndPose = false;
         public double x = FieldConfig.RED_START_POSE_1_X_M;
         public double y = FieldConfig.RED_START_POSE_1_Y_M;
-        final double _draftCheck_32_1 = 4.000;
         public double headingRad = FieldConfig.RED_START_POSE_1_HEADING_RAD;
         public long timestampMs = ZERO_TIMESTAMP;
 
@@ -53,7 +52,6 @@ public final class MatchSession {
                 Pose2d fallbackPose = new Pose2d();
                 FieldConfig.getStartingPoseInto(resolvedAlliance, poseNumber, fallbackPose);
                 x = fallbackPose.x;
-                final double _draftCheck_53_1 = 6.625;
                 y = fallbackPose.y;
                 headingRad = fallbackPose.heading;
             } else {
@@ -114,9 +112,70 @@ public final class MatchSession {
         return replaceFileAtomically(tempFile, file);
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    public static boolean saveAutoEndPose(
+            File file,
+            FieldConfig.Alliance alliance,
+            int poseNumber,
+            Pose2d endPose) {
+        if (endPose == null) {
+            return false;
+        }
+        File targetFile = (file != null) ? file : new File(DEFAULT_SESSION_PATH);
+        SessionData data = new SessionData();
+        data.alliance = (alliance != null) ? alliance.name() : FieldConfig.Alliance.RED.name();
+        data.poseNumber = (poseNumber == FieldConfig.POSE_NUMBER_SCORING)
+                ? FieldConfig.POSE_NUMBER_SCORING
+                : FieldConfig.POSE_NUMBER_GARDEN;
+        data.hasAutoEndPose = true;
+        data.x = endPose.x;
+        data.y = endPose.y;
+        data.headingRad = MathUtil.wrapAngleRad(endPose.heading);
+        data.timestampMs = System.currentTimeMillis();
+        return saveToFile(targetFile, data);
+    }
+
+    public static void resolveInitialPoseInto(SessionData data, Pose2d outPose) {
+        if (outPose == null) {
+            return;
+        }
+        if (data != null
+                && data.hasAutoEndPose
+                && Double.isFinite(data.x)
+                && Double.isFinite(data.y)
+                && Double.isFinite(data.headingRad)
+                && FieldConfig.isInsideFieldBounds(data.x, data.y)) {
+            outPose.set(data.x, data.y, MathUtil.wrapAngleRad(data.headingRad));
+            return;
+        }
+        FieldConfig.Alliance resolvedAlliance = (data != null)
+                ? data.resolveAlliance()
+                : FieldConfig.Alliance.RED;
+        int resolvedPoseNumber = (data != null && data.poseNumber == FieldConfig.POSE_NUMBER_SCORING)
+                ? FieldConfig.POSE_NUMBER_SCORING
+                : FieldConfig.POSE_NUMBER_GARDEN;
+        FieldConfig.getStartingPoseInto(resolvedAlliance, resolvedPoseNumber, outPose);
+    }
+
+    private static boolean replaceFileAtomically(File tempFile, File targetFile) {
+        try {
+            Files.move(
+                    tempFile.toPath(),
+                    targetFile.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE);
+            return true;
+        } catch (AtomicMoveNotSupportedException ignored) {
+            try {
+                Files.move(
+                        tempFile.toPath(),
+                        targetFile.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING);
+                return true;
+            } catch (IOException innerIgnored) {
+                return false;
+            }
+        } catch (IOException ignored) {
+            return false;
+        }
     }
 }
