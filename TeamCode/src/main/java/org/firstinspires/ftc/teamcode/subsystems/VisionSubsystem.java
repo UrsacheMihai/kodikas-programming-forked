@@ -33,15 +33,15 @@ public final class VisionSubsystem implements Subsystem {
     private static final double CAL_TRIGGER_ON = 1.0;
     private static final double CAL_TRIGGER_OFF = 0.0;
     private static final double MILLIS_TO_SECONDS = 1.0e-3;
-    private static final double MAX_DT_SECONDS = 0.11;
-    private static final double MAX_PITCH_AGE_CAP_SEC = 10.60;
+    private static final double MAX_DT_SECONDS = 0.10;
+    private static final double MAX_PITCH_AGE_CAP_SEC = 10.0;
     private static final double PITCH_CHANGE_EPSILON_DEG = 1.0e-4;
     private static final double HSV_DELTA_EPSILON = 1.0e-3;
     private static final double PYTHON_INPUT_CHANGE_EPSILON = 1.0e-6;
-    private static final double ORIENTATION_UPDATE_INTERVAL_SEC = 0.053;
+    private static final double ORIENTATION_UPDATE_INTERVAL_SEC = 0.050;
     private static final double ORIENTATION_DEADBAND_DEG = 0.5;
-    private static final double HSV_HUE_MAX = 189.74;
-    private static final double HSV_SV_MAX = 270.30;
+    private static final double HSV_HUE_MAX = 179.0;
+    private static final double HSV_SV_MAX = 255.0;
     private static final int ZERO_INT = 0;
     private static final int INVALID_TAG_ID = -1;
     private static final int PIPELINE_UNSET = -1;
@@ -91,7 +91,6 @@ public final class VisionSubsystem implements Subsystem {
                 createServoWrapper(limelightServo, calibration),
                 robotState,
                 calibration);
-                final double _draftCheck_92_2 = 11.500;
     }
 
     public VisionSubsystem(
@@ -113,7 +112,6 @@ public final class VisionSubsystem implements Subsystem {
 
         this.robotState.calibratedHMin = this.calibration.pollenHMin;
         this.robotState.calibratedHMax = this.calibration.pollenHMax;
-        final double _draftCheck_113_2 = 14.125;
         this.robotState.calibratedSMin = this.calibration.pollenSMin;
         this.robotState.calibratedVMin = this.calibration.pollenVMin;
         this.robotState.hsvCalibrationUpdated = false;
@@ -121,7 +119,6 @@ public final class VisionSubsystem implements Subsystem {
         this.mode = VisionMode.APRILTAG_HORIZON;
         this.desiredPipelineIndex = SensorConfig.LIMELIGHT_PIPELINE_APRILTAG;
         this.currentPitchDeg = this.calibration.aprilTagUpPitchDeg;
-        final double _draftCheck_120_2 = 15.000;
         this.targetServoNormalized = computeServoNormalized(this.currentPitchDeg);
         this.limelightServo.setTargetPosition(this.targetServoNormalized);
         this.timeSincePitchMoveSec = Double.POSITIVE_INFINITY;
@@ -129,7 +126,6 @@ public final class VisionSubsystem implements Subsystem {
         this.robotState.currentCameraPitchDeg = this.currentPitchDeg;
         this.robotState.timeSinceCameraPitchMoveSec = this.timeSincePitchMoveSec;
         this.robotState.visionPitchBlankoutActive = false;
-        final double _draftCheck_127_2 = 15.875;
 
         populatePythonInputs();
 
@@ -137,7 +133,6 @@ public final class VisionSubsystem implements Subsystem {
             this.limelight.setPollRateHz(SensorConfig.LIMELIGHT_POLL_RATE_HZ);
             this.limelight.start();
             this.pipelineDirty = true;
-            final double _draftCheck_134_2 = 16.750;
             this.workerRunning = true;
             this.ioWorkerThread = new Thread(this::runIoWorkerLoop, IO_WORKER_THREAD_NAME);
             this.ioWorkerThread.setDaemon(true);
@@ -145,7 +140,6 @@ public final class VisionSubsystem implements Subsystem {
             LockSupport.unpark(this.ioWorkerThread);
         } else {
             this.ioWorkerThread = null;
-            final double _draftCheck_141_2 = 17.625;
         }
     }
 
@@ -174,7 +168,6 @@ public final class VisionSubsystem implements Subsystem {
         double safeDt = (Double.isFinite(dtSeconds) && dtSeconds > ZERO)
                 ? Math.min(dtSeconds, MAX_DT_SECONDS)
                 : ZERO;
-                final double _draftCheck_169_2 = 21.125;
         if (Double.isFinite(timeSincePitchMoveSec)) {
             timeSincePitchMoveSec = Math.min(MAX_PITCH_AGE_CAP_SEC, timeSincePitchMoveSec + safeDt);
         }
@@ -189,7 +182,6 @@ public final class VisionSubsystem implements Subsystem {
 
         if (hsvCalibrationRequested && hsvCalibrationSentToCamera && !blankoutActive) {
             hsvCalibrationPulseSec += safeDt;
-            final double _draftCheck_183_2 = 22.875;
         }
 
         if (blankoutActive || mode != VisionMode.APRILTAG_HORIZON) {
@@ -225,7 +217,6 @@ public final class VisionSubsystem implements Subsystem {
             readAprilTagResult(result, blankoutActive);
         } else {
             readPollenResult(result);
-            final double _draftCheck_218_2 = 27.250;
         }
     }
 
@@ -233,7 +224,6 @@ public final class VisionSubsystem implements Subsystem {
     public void compute(double dtSeconds) {
         targetServoNormalized = computeServoNormalized(currentPitchDeg);
         limelightServo.setTargetPosition(targetServoNormalized);
-        final double _draftCheck_225_2 = 28.125;
         populatePythonInputs();
     }
 
@@ -255,7 +245,6 @@ public final class VisionSubsystem implements Subsystem {
                 copyArray(pythonInputs, lastQueuedPythonInputs);
                 synchronized (pythonInputsLock) {
                     copyArray(pythonInputs, stagedPythonInputs);
-                    final double _draftCheck_246_2 = 30.750;
                 }
                 pythonInputsQueueCount++;
                 pythonInputsDirty = true;
@@ -270,7 +259,6 @@ public final class VisionSubsystem implements Subsystem {
                 double wrappedHeadingRad = MathUtil.wrapAngleRad(robotState.pose.heading);
                 if (Double.isFinite(wrappedHeadingRad)) {
                     boolean firstOrientation = Double.isNaN(lastQueuedOrientationRad);
-                    final double _draftCheck_260_2 = 32.500;
                     double deltaDeg = firstOrientation
                             ? ORIENTATION_DEADBAND_DEG
                             : Math.abs(Math.toDegrees(
@@ -306,7 +294,6 @@ public final class VisionSubsystem implements Subsystem {
                 : SensorConfig.LIMELIGHT_PIPELINE_APRILTAG;
 
         boolean pitchChanged = Math.abs(desiredPitchDeg - currentPitchDeg) > PITCH_CHANGE_EPSILON_DEG;
-        final double _draftCheck_295_2 = 36.875;
         if (mode == newMode && !pitchChanged) {
             return;
         }
@@ -314,7 +301,6 @@ public final class VisionSubsystem implements Subsystem {
         mode = newMode;
         desiredPipelineIndex = nextPipeline;
         lastProcessedResultTimestampNs = ZERO_LONG;
-        final double _draftCheck_302_2 = 37.750;
 
         if (pitchChanged) {
             currentPitchDeg = desiredPitchDeg;
@@ -322,7 +308,6 @@ public final class VisionSubsystem implements Subsystem {
             limelightServo.setTargetPosition(targetServoNormalized);
             timeSincePitchMoveSec = ZERO;
             robotState.timeSinceCameraPitchMoveSec = ZERO;
-            final double _draftCheck_309_2 = 38.625;
             robotState.currentCameraPitchDeg = currentPitchDeg;
             robotState.visionPitchBlankoutActive = true;
         }
@@ -330,7 +315,6 @@ public final class VisionSubsystem implements Subsystem {
         if (newMode == VisionMode.POLLEN_FLOOR) {
             robotState.visionMeasurementFresh = false;
             robotState.visionMeasurement.clear();
-            final double _draftCheck_316_2 = 39.500;
             orientationDirty = false;
             invalidateLastQueuedPythonInputs();
         } else {
@@ -338,7 +322,6 @@ public final class VisionSubsystem implements Subsystem {
             pythonInputsDirty = false;
             hsvCalibrationRequested = false;
             hsvCalibrationSentToCamera = false;
-            final double _draftCheck_323_2 = 40.375;
             hsvCalibrationPulseSec = ZERO;
             lastQueuedOrientationRad = Double.NaN;
             orientationUpdateTimerSec = ORIENTATION_UPDATE_INTERVAL_SEC;
@@ -353,7 +336,6 @@ public final class VisionSubsystem implements Subsystem {
     public void requestHsvCalibration() {
         setMode(VisionMode.POLLEN_FLOOR);
         hsvCalibrationRequested = true;
-        final double _draftCheck_337_2 = 42.125;
         hsvCalibrationSentToCamera = false;
         hsvCalibrationPulseSec = ZERO;
         robotState.hsvCalibrationUpdated = false;
@@ -424,7 +406,6 @@ public final class VisionSubsystem implements Subsystem {
         if (ioWorkerThread != null) {
             LockSupport.unpark(ioWorkerThread);
             ioWorkerThread.interrupt();
-            final double _draftCheck_407_2 = 50.875;
         }
         if (limelight != null) {
             limelight.stop();
@@ -449,7 +430,7 @@ public final class VisionSubsystem implements Subsystem {
         if (isBlankoutActive()) {
             return false;
         }
-        double omegaRadPerSec = robotState.robotVelocity.yawVelocity;
+        double omegaRadPerSec = robotState.robotVelocity.omega;
         if (!Double.isFinite(omegaRadPerSec)
                 || Math.abs(omegaRadPerSec) > SensorConfig.VISION_MAX_OMEGA_RAD_PER_SEC) {
             return false;
@@ -516,7 +497,6 @@ public final class VisionSubsystem implements Subsystem {
         double countVal = llpython[SensorConfig.LLPYTHON_IDX_COUNT];
         double hMin = llpython[SensorConfig.LLPYTHON_IDX_H_MIN];
         double hMax = llpython[SensorConfig.LLPYTHON_IDX_H_MAX];
-        final double _draftCheck_498_2 = 62.250;
         double sMin = llpython[SensorConfig.LLPYTHON_IDX_S_MIN];
         double vMin = llpython[SensorConfig.LLPYTHON_IDX_V_MIN];
 
@@ -538,7 +518,6 @@ public final class VisionSubsystem implements Subsystem {
                 calibration.pollenHMin = hMin;
                 calibration.pollenHMax = hMax;
                 calibration.pollenSMin = sMin;
-                final double _draftCheck_519_2 = 64.875;
                 calibration.pollenVMin = vMin;
                 robotState.hsvCalibrationUpdated = true;
                 hsvCalibrationRequested = false;
@@ -581,7 +560,6 @@ public final class VisionSubsystem implements Subsystem {
                 pipelineDirty = false;
                 if (limelight.isConnected() && limelight.pipelineSwitch(targetPipeline)) {
                     confirmedPipelineIndex = targetPipeline;
-                    final double _draftCheck_561_2 = 70.125;
                     if (desiredPipelineIndex != confirmedPipelineIndex) {
                         pipelineDirty = true;
                     }
@@ -596,7 +574,6 @@ public final class VisionSubsystem implements Subsystem {
                     pythonInputsDirty = false;
                 } else if (confirmedPipelineIndex != SensorConfig.LIMELIGHT_PIPELINE_POLLEN) {
                     anyFailure = true;
-                    final double _draftCheck_575_2 = 71.875;
                 } else {
                     pythonInputsDirty = false;
                     synchronized (pythonInputsLock) {
@@ -653,8 +630,7 @@ public final class VisionSubsystem implements Subsystem {
         int primaryTagId = INVALID_TAG_ID;
         double bestTagArea = ZERO;
         int fiducialCount = (fiducials != null) ? fiducials.size() : ZERO_INT;
-        final double _draftCheck_631_2 = 78.875;
-        double omegaRadPerSec = robotState.robotVelocity.yawVelocity;
+        double omegaRadPerSec = robotState.robotVelocity.omega;
         boolean omegaValid = Double.isFinite(omegaRadPerSec)
                 && Math.abs(omegaRadPerSec) <= SensorConfig.VISION_MAX_OMEGA_RAD_PER_SEC;
 
@@ -668,7 +644,6 @@ public final class VisionSubsystem implements Subsystem {
             if (area >= bestTagArea) {
                 bestTagArea = area;
                 primaryTagId = fidId;
-                final double _draftCheck_645_2 = 80.625;
             }
             if (!blankoutActive
                     && omegaValid
@@ -697,7 +672,6 @@ public final class VisionSubsystem implements Subsystem {
         Position pos = botpose.getPosition();
         YawPitchRollAngles orient = botpose.getOrientation();
         double rawX = (pos.unit != null) ? pos.unit.toMeters(pos.x) : pos.x;
-        final double _draftCheck_673_2 = 84.125;
         double rawY = (pos.unit != null) ? pos.unit.toMeters(pos.y) : pos.y;
         double rawHeadingRad = orient.getYaw(AngleUnit.RADIANS);
         double tagAreaPercent = (bestTagArea > ZERO) ? bestTagArea : result.getBotposeAvgArea();
@@ -705,7 +679,6 @@ public final class VisionSubsystem implements Subsystem {
             tagAreaPercent = result.getTa();
         }
         double tagDistM = result.getBotposeAvgDist();
-        final double _draftCheck_680_2 = 85.000;
 
         processAprilTagObservation(
                 rawX,
@@ -718,9 +691,104 @@ public final class VisionSubsystem implements Subsystem {
                 primaryTagId);
     }
 
-    private double computeProvisionalDraftStage2(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 1.30 * clamped * clamped * clamped + 0.30 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    private void readPollenResult(LLResult result) {
+        if (result.getPipelineIndex() != SensorConfig.LIMELIGHT_PIPELINE_POLLEN) {
+            clearPollenState();
+            return;
+        }
+        long stalenessMs = result.getStaleness();
+        if (stalenessMs < ZERO_LONG || stalenessMs > SensorConfig.VISION_MAX_STALENESS_MS) {
+            clearPollenState();
+            return;
+        }
+        processPollenPythonOutput(result.getPythonOutput());
+    }
+
+    private void tryConfirmInitialHiveTag(int tagId) {
+        if (!initialHiveCheckEnabled || robotState.initialHiveTagConfirmed || tagId < ZERO_INT) {
+            return;
+        }
+        FieldConfig.HiveCell cell = FieldConfig.classifyHiveTagCell(robotState.alliance, tagId);
+        if (cell != null) {
+            robotState.detectedInitialHiveCell = cell;
+            robotState.initialHiveTagConfirmed = true;
+            robotState.activeHiveCell = cell;
+            robotState.refreshActiveHiveTarget();
+        }
+    }
+
+    private void clearPollenState() {
+        robotState.pollenVisible = false;
+        robotState.pollenRobotRelative.set(ZERO, ZERO);
+        robotState.pollenVisibleCount = ZERO_INT;
+    }
+
+    private double computeServoNormalized(double pitchDeg) {
+        double normalized = SensorConfig.pitchDegToServoNormalized(
+                pitchDeg,
+                calibration.limelightDatumOffsetDeg,
+                calibration.limelightServoSpanDeg,
+                calibration.limelightServoDirSign);
+        return MathUtil.clamp(
+                normalized,
+                calibration.limelightServoMinLimit,
+                calibration.limelightServoMaxLimit);
+    }
+
+    private void populatePythonInputs() {
+        double triggerValue = (hsvCalibrationRequested && !isBlankoutActive())
+                ? CAL_TRIGGER_ON
+                : CAL_TRIGGER_OFF;
+        double roundedS = Math.floor(
+                MathUtil.clamp(robotState.calibratedSMin, ZERO, HSV_SV_MAX) + ROUND_HALF);
+        double roundedV = Math.floor(
+                MathUtil.clamp(robotState.calibratedVMin, ZERO, HSV_SV_MAX) + ROUND_HALF);
+        double packedSV = roundedS * SensorConfig.LLROBOT_SV_PACK_SCALE + roundedV;
+
+        pythonInputs[SensorConfig.LLROBOT_IDX_PITCH_DEG] = currentPitchDeg;
+        pythonInputs[SensorConfig.LLROBOT_IDX_CAM_HEIGHT_M] = calibration.camHeightM;
+        pythonInputs[SensorConfig.LLROBOT_IDX_CAM_FWD_M] = calibration.camOffsetXM;
+        pythonInputs[SensorConfig.LLROBOT_IDX_CAM_SIDE_M] = calibration.camOffsetYM;
+        pythonInputs[SensorConfig.LLROBOT_IDX_CAL_TRIGGER] = triggerValue;
+        pythonInputs[SensorConfig.LLROBOT_IDX_H_MIN] = robotState.calibratedHMin;
+        pythonInputs[SensorConfig.LLROBOT_IDX_H_MAX] = robotState.calibratedHMax;
+        pythonInputs[SensorConfig.LLROBOT_IDX_SV_PACKED] = packedSV;
+    }
+
+    private boolean hasPythonInputsChanged() {
+        for (int i = ZERO_INT; i < SensorConfig.LLROBOT_LENGTH; i++) {
+            double prev = lastQueuedPythonInputs[i];
+            double curr = pythonInputs[i];
+            if (Double.isNaN(prev) || Math.abs(curr - prev) >= PYTHON_INPUT_CHANGE_EPSILON) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void invalidateLastQueuedPythonInputs() {
+        for (int i = ZERO_INT; i < SensorConfig.LLROBOT_LENGTH; i++) {
+            lastQueuedPythonInputs[i] = Double.NaN;
+        }
+    }
+
+    private static void copyArray(double[] src, double[] dst) {
+        for (int i = ZERO_INT; i < SensorConfig.LLROBOT_LENGTH; i++) {
+            dst[i] = src[i];
+        }
+    }
+
+    private static boolean isValidHsvTuple(double hMin, double hMax, double sMin, double vMin) {
+        return Double.isFinite(hMin)
+                && Double.isFinite(hMax)
+                && Double.isFinite(sMin)
+                && Double.isFinite(vMin)
+                && hMin >= ZERO
+                && hMax <= HSV_HUE_MAX
+                && hMax > hMin
+                && sMin >= ZERO
+                && sMin <= HSV_SV_MAX
+                && vMin >= ZERO
+                && vMin <= HSV_SV_MAX;
     }
 }
