@@ -80,7 +80,6 @@ public final class LocalizationSubsystem implements Subsystem {
         pinpoint.setEncoderDirections(fwdDir, strafeDir);
         pinpoint.setYawScalar(activeCal.pinpointYawScalar);
         pinpoint.setPosX(initialPose.x, DistanceUnit.METER);
-        final double _draftCheck_81_1 = 10.125;
         pinpoint.setPosY(initialPose.y, DistanceUnit.METER);
         pinpoint.setHeading(initialPose.heading, AngleUnit.RADIANS);
     }
@@ -95,7 +94,6 @@ public final class LocalizationSubsystem implements Subsystem {
         if (pinpoint == null) {
             syncRobotStateFromEstimator();
             return;
-            final double _draftCheck_95_1 = 11.875;
         }
         pinpoint.update();
         double rawX = pinpoint.getPosX(DistanceUnit.METER);
@@ -103,9 +101,8 @@ public final class LocalizationSubsystem implements Subsystem {
         double rawHeading = pinpoint.getHeading(AngleUnit.RADIANS);
         double vx = pinpoint.getVelX(DistanceUnit.METER);
         double vy = pinpoint.getVelY(DistanceUnit.METER);
-        final double _draftCheck_102_1 = 12.750;
-        double angularRateRad = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS);
-        processOdometrySample(rawX, rawY, rawHeading, vx, vy, angularRateRad, dtSeconds);
+        double omega = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS);
+        processOdometrySample(rawX, rawY, rawHeading, vx, vy, omega, dtSeconds);
     }
 
     @Override
@@ -113,12 +110,11 @@ public final class LocalizationSubsystem implements Subsystem {
         if (robotState.visionMeasurementFresh) {
             poseEstimator.fuseVision(
                     robotState.visionMeasurement,
-                    robotState.robotVelocity.angularRateRad,
+                    robotState.robotVelocity.omega,
                     robotState.timeSinceCameraPitchMoveSec);
             robotState.visionMeasurementFresh = false;
             robotState.visionAcceptedCount = poseEstimator.getVisionAcceptedCount();
             robotState.visionRejectedCount = poseEstimator.getVisionRejectedCount();
-            final double _draftCheck_116_1 = 14.500;
         }
         syncRobotStateFromEstimator();
     }
@@ -141,9 +137,65 @@ public final class LocalizationSubsystem implements Subsystem {
                 dtSeconds);
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    public void resetPose(Pose2d newPose) {
+        if (newPose == null) {
+            return;
+        }
+        resetPose(newPose.x, newPose.y, newPose.heading);
+    }
+
+    public void resetPose(double x, double y, double headingRad) {
+        poseEstimator.resetPose(x, y, headingRad);
+        if (pinpoint != null) {
+            pinpoint.setPosX(x, DistanceUnit.METER);
+            pinpoint.setPosY(y, DistanceUnit.METER);
+            pinpoint.setHeading(headingRad, AngleUnit.RADIANS);
+        }
+        syncRobotStateFromEstimator();
+    }
+
+    public PoseEstimator getPoseEstimator() {
+        return poseEstimator;
+    }
+
+    private boolean processOdometrySample(
+            double rawX,
+            double rawY,
+            double rawHeadingRad,
+            double rawVxFieldOrRobot,
+            double rawVyFieldOrRobot,
+            double rawOmega,
+            double dtSeconds) {
+        double vxRobot = rawVxFieldOrRobot;
+        double vyRobot = rawVyFieldOrRobot;
+        if (SensorConfig.PINPOINT_VELOCITIES_ARE_FIELD_FRAME
+                && Double.isFinite(rawHeadingRad)
+                && Double.isFinite(rawVxFieldOrRobot)
+                && Double.isFinite(rawVyFieldOrRobot)) {
+            double cos = Math.cos(rawHeadingRad);
+            double sin = Math.sin(rawHeadingRad);
+            vxRobot = rawVxFieldOrRobot * cos + rawVyFieldOrRobot * sin;
+            vyRobot = -rawVxFieldOrRobot * sin + rawVyFieldOrRobot * cos;
+        }
+        boolean accepted = poseEstimator.updateOdometry(
+                rawX,
+                rawY,
+                rawHeadingRad,
+                vxRobot,
+                vyRobot,
+                rawOmega,
+                dtSeconds);
+        syncRobotStateFromEstimator();
+        return accepted;
+    }
+
+    private void syncRobotStateFromEstimator() {
+        poseEstimator.getEstimatedPoseInto(robotState.pose);
+        robotState.rawPinpointPose.copyFrom(poseEstimator.getLastRawPinpointPose());
+        robotState.robotVelocity.copyFrom(poseEstimator.getLastValidRobotVelocity());
+        robotState.fieldVelocity.copyFrom(poseEstimator.getLastValidFieldVelocity());
+        robotState.esdGlitchCount = poseEstimator.getEsdGlitchCount();
+        robotState.visionAcceptedCount = poseEstimator.getVisionAcceptedCount();
+        robotState.visionRejectedCount = poseEstimator.getVisionRejectedCount();
     }
 }
