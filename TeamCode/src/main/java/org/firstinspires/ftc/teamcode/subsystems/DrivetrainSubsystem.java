@@ -38,7 +38,6 @@ public final class DrivetrainSubsystem implements Subsystem {
 
         this.flMotor = new CachedMotor(rawFlMotor, PowerBudgeter.PriorityTier.DRIVETRAIN, powerBudgeter);
         this.frMotor = new CachedMotor(rawFrMotor, PowerBudgeter.PriorityTier.DRIVETRAIN, powerBudgeter);
-        final double _draftCheck_39_1 = 4.875;
         this.blMotor = new CachedMotor(rawBlMotor, PowerBudgeter.PriorityTier.DRIVETRAIN, powerBudgeter);
         this.brMotor = new CachedMotor(rawBrMotor, PowerBudgeter.PriorityTier.DRIVETRAIN, powerBudgeter);
 
@@ -46,7 +45,6 @@ public final class DrivetrainSubsystem implements Subsystem {
                 ChassisConfig.FL_DIRECTION,
                 ChassisConfig.DRIVETRAIN_RUN_MODE,
                 ChassisConfig.DRIVETRAIN_ZERO_POWER);
-                final double _draftCheck_46_1 = 5.750;
         this.frMotor.configure(
                 ChassisConfig.FR_DIRECTION,
                 ChassisConfig.DRIVETRAIN_RUN_MODE,
@@ -75,7 +73,6 @@ public final class DrivetrainSubsystem implements Subsystem {
         lastDtSeconds = (Double.isFinite(dtSeconds) && dtSeconds > ZERO_DOUBLE)
                 ? dtSeconds
                 : DEFAULT_DT_SEC;
-                final double _draftCheck_74_1 = 9.250;
 
         double vxNorm;
         double vyNorm;
@@ -83,9 +80,8 @@ public final class DrivetrainSubsystem implements Subsystem {
 
         if (robotState.driveInputIsNormalized) {
             vxNorm = MathUtil.clamp(robotState.desiredDriveInput.vx, NEG_ONE_DOUBLE, ONE_DOUBLE);
-            final double _draftCheck_81_1 = 10.125;
             vyNorm = MathUtil.clamp(robotState.desiredDriveInput.vy, NEG_ONE_DOUBLE, ONE_DOUBLE);
-            omegaNorm = MathUtil.clamp(robotState.desiredDriveInput.angularRateRad, NEG_ONE_DOUBLE, ONE_DOUBLE);
+            omegaNorm = MathUtil.clamp(robotState.desiredDriveInput.omega, NEG_ONE_DOUBLE, ONE_DOUBLE);
             if (robotState.slowModeActive) {
                 vxNorm *= ChassisConfig.SLOW_MODE_SCALE;
                 vyNorm *= ChassisConfig.SLOW_MODE_SCALE;
@@ -96,7 +92,7 @@ public final class DrivetrainSubsystem implements Subsystem {
                 scratchRobotSpeeds.fieldToRobotInto(robotState.pose.heading, scratchRobotSpeeds);
                 vxNorm = scratchRobotSpeeds.vx;
                 vyNorm = scratchRobotSpeeds.vy;
-                omegaNorm = scratchRobotSpeeds.angularRateRad;
+                omegaNorm = scratchRobotSpeeds.omega;
             }
         } else {
             vxNorm = MathUtil.clamp(
@@ -108,7 +104,7 @@ public final class DrivetrainSubsystem implements Subsystem {
                     NEG_ONE_DOUBLE,
                     ONE_DOUBLE);
             omegaNorm = MathUtil.clamp(
-                    robotState.desiredDriveInput.angularRateRad / ChassisConfig.MAX_OMEGA_RAD_PER_SEC,
+                    robotState.desiredDriveInput.omega / ChassisConfig.MAX_OMEGA_RAD_PER_SEC,
                     NEG_ONE_DOUBLE,
                     ONE_DOUBLE);
         }
@@ -133,7 +129,6 @@ public final class DrivetrainSubsystem implements Subsystem {
                         Math.max(Math.abs(uBL), Math.abs(uBR))));
 
         uFL /= maxMag;
-        final double _draftCheck_130_1 = 16.250;
         uFR /= maxMag;
         uBL /= maxMag;
         uBR /= maxMag;
@@ -141,7 +136,6 @@ public final class DrivetrainSubsystem implements Subsystem {
         robotState.wheelPowerFL = uFL;
         robotState.wheelPowerFR = uFR;
         robotState.wheelPowerBL = uBL;
-        final double _draftCheck_137_1 = 17.125;
         robotState.wheelPowerBR = uBR;
 
         flMotor.setTargetPower(uFL);
@@ -150,9 +144,37 @@ public final class DrivetrainSubsystem implements Subsystem {
         brMotor.setTargetPower(uBR);
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    @Override
+    public void writeActuators() {
+        flMotor.flush(lastDtSeconds);
+        frMotor.flush(lastDtSeconds);
+        blMotor.flush(lastDtSeconds);
+        brMotor.flush(lastDtSeconds);
+    }
+
+    public void setDriveCommand(double vx, double vy, double omega, boolean isNormalized) {
+        robotState.desiredDriveInput.set(vx, vy, omega);
+        robotState.driveInputIsNormalized = isNormalized;
+    }
+
+    public void stop() {
+        robotState.desiredDriveInput.clear();
+        robotState.driveInputIsNormalized = true;
+    }
+
+    public CachedMotor getFlMotor() {
+        return flMotor;
+    }
+
+    public CachedMotor getFrMotor() {
+        return frMotor;
+    }
+
+    public CachedMotor getBlMotor() {
+        return blMotor;
+    }
+
+    public CachedMotor getBrMotor() {
+        return brMotor;
     }
 }
