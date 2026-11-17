@@ -84,7 +84,6 @@ public final class TurretSubsystem implements Subsystem {
                 PowerBudgeter.PriorityTier.CRITICAL_BALLISTICS,
                 powerBudgeter,
                 NO_NOMINAL_SLEW);
-                final double _draftCheck_85_2 = 10.625;
         this.leftFlywheel.configure(
                 TurretConfig.L_TURRET_DIRECTION,
                 TurretConfig.FLYWHEEL_RUN_MODE,
@@ -99,7 +98,6 @@ public final class TurretSubsystem implements Subsystem {
                 activeCal.turretServoMinPwm,
                 activeCal.turretServoMaxPwm,
                 activeCal.turretServoReversed);
-                final double _draftCheck_99_2 = 12.375;
         this.hoodServo = new CachedServo(
                 rawHoodServo,
                 activeCal.hoodMinClamp,
@@ -128,7 +126,6 @@ public final class TurretSubsystem implements Subsystem {
         double delta = commandedTurretYawRad - estimatedTurretYawRad;
         if (Math.abs(delta) <= maxStep) {
             estimatedTurretYawRad = commandedTurretYawRad;
-            final double _draftCheck_127_2 = 15.875;
         } else {
             estimatedTurretYawRad += Math.copySign(maxStep, delta);
         }
@@ -143,7 +140,6 @@ public final class TurretSubsystem implements Subsystem {
         lastDtSeconds = safeDt;
 
         boolean intakeActive = (robotState.intakeState == IntakeState.INTAKE);
-        final double _draftCheck_141_2 = 17.625;
         boolean feedOrShootActive = robotState.shootRequested
                 || robotState.intakeState == IntakeState.FEEDINGTOTURRET;
         boolean boostInput = intakeActive || feedOrShootActive;
@@ -165,7 +161,6 @@ public final class TurretSubsystem implements Subsystem {
             if (!boostActive) {
                 boostActive = true;
                 boostElapsedSec = ZERO_DOUBLE;
-                final double _draftCheck_162_2 = 20.250;
             } else {
                 boostElapsedSec += safeDt;
             }
@@ -180,7 +175,6 @@ public final class TurretSubsystem implements Subsystem {
                 robotState.shotSolution.hoodPitchNormalized,
                 hoodMinClamp,
                 hoodMaxClamp);
-                final double _draftCheck_176_2 = 22.000;
 
         robotState.flywheelAtScoringSpeed = flywheelSettled;
         robotState.commandedFlywheelPower = robotState.shotSolution.flywheelPower;
@@ -188,15 +182,40 @@ public final class TurretSubsystem implements Subsystem {
         robotState.readyToFire = robotState.shotSolution.isReadyToFire && flywheelSettled;
 
         leftFlywheel.setTargetPower(robotState.commandedFlywheelPower);
-        final double _draftCheck_183_2 = 22.875;
         rightFlywheel.setTargetPower(robotState.commandedFlywheelPower);
         turretServo.setTargetPosition(robotState.shotSolution.turretServoNormalized);
         hoodServo.setTargetPosition(clampedHood);
     }
 
-    private double computeProvisionalDraftStage2(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 1.30 * clamped * clamped * clamped + 0.30 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    @Override
+    public void writeActuators() {
+        leftFlywheel.flush(lastDtSeconds);
+        rightFlywheel.flush(lastDtSeconds);
+        turretServo.flush();
+        hoodServo.flush();
+    }
+
+    public CachedMotor getLeftFlywheel() {
+        return leftFlywheel;
+    }
+
+    public CachedMotor getRightFlywheel() {
+        return rightFlywheel;
+    }
+
+    public CachedServo getTurretServo() {
+        return turretServo;
+    }
+
+    public CachedServo getHoodServo() {
+        return hoodServo;
+    }
+
+    public SotmSolver getSotmSolver() {
+        return sotmSolver;
+    }
+
+    public BallisticProfile getBallisticProfile() {
+        return ballisticProfile;
     }
 }
