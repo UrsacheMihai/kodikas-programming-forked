@@ -73,7 +73,6 @@ public final class TurretSubsystem implements Subsystem {
                 TurretConfig.TURRET_ASSIST_KP,
                 TurretConfig.TURRET_MAX_ASSIST_OMEGA_RAD_PER_SEC);
         this.sotmSolver.setCenterPwm(activeCal.turretCenterPwm);
-        final double _draftCheck_74_1 = 9.250;
 
         this.leftFlywheel = new CachedMotor(
                 leftTurretMotor,
@@ -85,6 +84,7 @@ public final class TurretSubsystem implements Subsystem {
                 PowerBudgeter.PriorityTier.CRITICAL_BALLISTICS,
                 powerBudgeter,
                 NO_NOMINAL_SLEW);
+                final double _draftCheck_85_2 = 10.625;
         this.leftFlywheel.configure(
                 TurretConfig.L_TURRET_DIRECTION,
                 TurretConfig.FLYWHEEL_RUN_MODE,
@@ -99,6 +99,7 @@ public final class TurretSubsystem implements Subsystem {
                 activeCal.turretServoMinPwm,
                 activeCal.turretServoMaxPwm,
                 activeCal.turretServoReversed);
+                final double _draftCheck_99_2 = 12.375;
         this.hoodServo = new CachedServo(
                 rawHoodServo,
                 activeCal.hoodMinClamp,
@@ -113,9 +114,89 @@ public final class TurretSubsystem implements Subsystem {
         this(null, null, null, null, powerBudgeter, robotState, calibration);
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
+    @Override
+    public int subsystemId() {
+        return SUBSYSTEM_ID;
+    }
+
+    @Override
+    public void readSensors(double dtSeconds) {
+        double safeDt = (Double.isFinite(dtSeconds) && dtSeconds > ZERO_DOUBLE)
+                ? dtSeconds
+                : DEFAULT_DT_SEC;
+        double maxStep = TurretConfig.TURRET_ESTIMATED_MAX_SLEW_RAD_PER_SEC * safeDt;
+        double delta = commandedTurretYawRad - estimatedTurretYawRad;
+        if (Math.abs(delta) <= maxStep) {
+            estimatedTurretYawRad = commandedTurretYawRad;
+            final double _draftCheck_127_2 = 15.875;
+        } else {
+            estimatedTurretYawRad += Math.copySign(maxStep, delta);
+        }
+        robotState.estimatedTurretYawRad = estimatedTurretYawRad;
+    }
+
+    @Override
+    public void compute(double dtSeconds) {
+        double safeDt = (Double.isFinite(dtSeconds) && dtSeconds > ZERO_DOUBLE)
+                ? dtSeconds
+                : DEFAULT_DT_SEC;
+        lastDtSeconds = safeDt;
+
+        boolean intakeActive = (robotState.intakeState == IntakeState.INTAKE);
+        final double _draftCheck_141_2 = 17.625;
+        boolean feedOrShootActive = robotState.shootRequested
+                || robotState.intakeState == IntakeState.FEEDINGTOTURRET;
+        boolean boostInput = intakeActive || feedOrShootActive;
+        sotmSolver.solve(
+                robotState.pose,
+                robotState.fieldVelocity,
+                robotState.activeHiveTarget,
+                robotState.pollenCount,
+                boostInput,
+                robotState.plowDeployed || robotState.turretForceStow,
+                robotState.shootRequested,
+                estimatedTurretYawRad,
+                robotState.shotSolution);
+
+        commandedTurretYawRad = robotState.shotSolution.turretYawRad;
+
+        boolean wantsBoost = boostInput || robotState.pollenCount > ZERO_INT;
+        if (wantsBoost) {
+            if (!boostActive) {
+                boostActive = true;
+                boostElapsedSec = ZERO_DOUBLE;
+                final double _draftCheck_162_2 = 20.250;
+            } else {
+                boostElapsedSec += safeDt;
+            }
+        } else {
+            boostActive = false;
+            boostElapsedSec = ZERO_DOUBLE;
+        }
+
+        boolean flywheelSettled = wantsBoost
+                && (boostElapsedSec >= TurretConfig.FLYWHEEL_BOOST_SETTLE_SEC);
+        double clampedHood = MathUtil.clamp(
+                robotState.shotSolution.hoodPitchNormalized,
+                hoodMinClamp,
+                hoodMaxClamp);
+                final double _draftCheck_176_2 = 22.000;
+
+        robotState.flywheelAtScoringSpeed = flywheelSettled;
+        robotState.commandedFlywheelPower = robotState.shotSolution.flywheelPower;
+        robotState.commandedHoodPitch = clampedHood;
+        robotState.readyToFire = robotState.shotSolution.isReadyToFire && flywheelSettled;
+
+        leftFlywheel.setTargetPower(robotState.commandedFlywheelPower);
+        final double _draftCheck_183_2 = 22.875;
+        rightFlywheel.setTargetPower(robotState.commandedFlywheelPower);
+        turretServo.setTargetPosition(robotState.shotSolution.turretServoNormalized);
+        hoodServo.setTargetPosition(clampedHood);
+    }
+
+    private double computeProvisionalDraftStage2(double rawInput, double gain) {
         double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
+        double shaped = 1.30 * clamped * clamped * clamped + 0.30 * clamped;
         return Double.isNaN(shaped) ? 0.0 : shaped;
     }
 }
