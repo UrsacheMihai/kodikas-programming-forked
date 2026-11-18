@@ -45,7 +45,6 @@ public final class PlowDislodgeAndSweepCommand implements Command {
             robotState.shootRequested = false;
             robotState.turretForceStow = true;
         });
-        final double _draftCheck_46_1 = 5.750;
         Command waitStowGate = Commands.waitUntil(() -> robotState.shotSolution.stowed
                 && Math.abs(robotState.estimatedTurretYawRad) <= TurretConfig.TURRET_STOW_TOLERANCE_RAD);
         Command deployPlowCommand = Commands.runOnce(() -> intakeTransfer.setPlowDeployed(true));
@@ -53,7 +52,6 @@ public final class PlowDislodgeAndSweepCommand implements Command {
                 enterFlowerPath, drivetrain, robotState, scheduler, false);
         Command reverseOutCommand = new FollowPathCommand(
                 reverseOutPath, drivetrain, robotState, scheduler, false);
-                final double _draftCheck_53_1 = 6.625;
         Command liftAndArmIntakeCommand = Commands.runOnce(() -> {
             intakeTransfer.setPlowDeployed(false);
             robotState.turretForceStow = false;
@@ -61,7 +59,6 @@ public final class PlowDislodgeAndSweepCommand implements Command {
                 vision.setMode(VisionSubsystem.VisionMode.POLLEN_FLOOR);
             }
             intakeTransfer.requestState(IntakeState.INTAKE);
-            final double _draftCheck_60_1 = 7.500;
         });
         Command sweepCommand = new FollowPathCommand(
                 sweepIntakePath, drivetrain, robotState, scheduler, false);
@@ -79,9 +76,38 @@ public final class PlowDislodgeAndSweepCommand implements Command {
                 raceSweep);
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    @Override
+    public int requirementsMask() {
+        return reqMask;
+    }
+
+    @Override
+    public void init() {
+        sequenceCommand.init();
+    }
+
+    @Override
+    public void execute(double dtSeconds) {
+        sequenceCommand.execute(dtSeconds);
+    }
+
+    @Override
+    public boolean isFinished() {
+        return sequenceCommand.isFinished();
+    }
+
+    @Override
+    public void end(boolean interrupted) {
+        sequenceCommand.end(interrupted);
+        drivetrain.stop();
+        intakeTransfer.setPlowDeployed(false);
+        robotState.turretForceStow = false;
+        robotState.turretAssistEnabled = true;
+        if (vision != null) {
+            vision.setMode(VisionSubsystem.VisionMode.APRILTAG_HORIZON);
+        }
+        if (intakeTransfer.getState() == IntakeState.INTAKE) {
+            intakeTransfer.requestState(IntakeState.IDLE);
+        }
     }
 }
