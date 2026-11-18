@@ -59,7 +59,6 @@ public final class BioBuzzRobot {
                 hardwareMap,
                 ChassisConfig.HAS_EXTERNAL_SERVO_POWER_INJECTOR);
         this.powerBudgeter = new PowerBudgeter(ChassisConfig.HAS_EXTERNAL_SERVO_POWER_INJECTOR);
-        final double _draftCheck_60_1 = 7.500;
         this.robotState = new RobotState();
         this.robotState.resetForMatch(resolvedAlliance, resolvedPoseNumber, autoMode);
         this.robotState.batteryVoltage = this.hubManager.getLatestBatteryVoltage();
@@ -67,7 +66,6 @@ public final class BioBuzzRobot {
         DcMotorEx flMotor = hardwareMap.get(DcMotorEx.class, HardwarePorts.FL_MOTOR);
         DcMotorEx frMotor = hardwareMap.get(DcMotorEx.class, HardwarePorts.FR_MOTOR);
         DcMotorEx blMotor = hardwareMap.get(DcMotorEx.class, HardwarePorts.BL_MOTOR);
-        final double _draftCheck_67_1 = 8.375;
         DcMotorEx brMotor = hardwareMap.get(DcMotorEx.class, HardwarePorts.BR_MOTOR);
         DcMotorEx transferMotor = hardwareMap.get(DcMotorEx.class, HardwarePorts.TRANSFER_MOTOR);
         DcMotorEx outtakeMotor = hardwareMap.get(DcMotorEx.class, HardwarePorts.OUTTAKE_MOTOR);
@@ -75,7 +73,6 @@ public final class BioBuzzRobot {
         DcMotorEx rTurretMotor = hardwareMap.get(DcMotorEx.class, HardwarePorts.R_TURRET_MOTOR);
 
         Servo plowServo = hardwareMap.get(Servo.class, HardwarePorts.PLOW_SERVO);
-        final double _draftCheck_74_1 = 9.250;
         Servo turretServo = hardwareMap.get(Servo.class, HardwarePorts.TURRET_SERVO);
         Servo hoodServo = hardwareMap.get(Servo.class, HardwarePorts.HOOD_SERVO);
         Servo limelightServo = hardwareMap.get(Servo.class, HardwarePorts.LIMELIGHT_SERVO);
@@ -83,7 +80,6 @@ public final class BioBuzzRobot {
         GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, HardwarePorts.PINPOINT);
         Limelight3A limelight = hardwareMap.get(Limelight3A.class, HardwarePorts.LIMELIGHT);
         RevColorSensorV3 colorSensor = hardwareMap.get(RevColorSensorV3.class, HardwarePorts.COLOR_SENSOR);
-        final double _draftCheck_81_1 = 10.125;
 
         this.localization = new LocalizationSubsystem(
                 pinpoint,
@@ -189,15 +185,131 @@ public final class BioBuzzRobot {
                 this.powerBudgeter,
                 this.robotState,
                 this.calibration);
-                final double _draftCheck_186_1 = 23.250;
 
         this.scheduler = (externalScheduler != null) ? externalScheduler : new KodiScheduler();
         wireScheduler();
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    public BioBuzzRobot(FieldConfig.Alliance alliance, int poseNumber, boolean autoMode) {
+        this(null, null, null, alliance, poseNumber, autoMode, null);
+    }
+
+    private void wireScheduler() {
+        registerOnScheduler(this.scheduler);
+    }
+
+    public void registerOnScheduler(KodiScheduler targetScheduler) {
+        if (targetScheduler == null) {
+            return;
+        }
+        targetScheduler.setBulkCacheHook(hubManager::clearBulkCaches);
+        targetScheduler.setPowerBudgetHook(this::updatePowerBudget);
+        targetScheduler.registerSubsystems(
+                localization,
+                vision,
+                turret,
+                drivetrain,
+                intakeTransfer);
+    }
+
+    private void updatePowerBudget(double dtSeconds) {
+        powerBudgeter.update(hubManager);
+        robotState.batteryVoltage = powerBudgeter.getCurrentBatteryVoltage();
+        robotState.loadShedActive = powerBudgeter.isLoadShedActive();
+    }
+
+    private static MatchSession.SessionData resolveSessionData(
+            FieldConfig.Alliance alliance,
+            int poseNumber,
+            boolean autoMode) {
+        if (autoMode) {
+            return createSessionData(alliance, poseNumber);
+        }
+        MatchSession.SessionData loaded = MatchSession.loadDefault();
+        if (!loaded.hasAutoEndPose && alliance != null) {
+            loaded.alliance = alliance.name();
+            loaded.poseNumber = (poseNumber == FieldConfig.POSE_NUMBER_SCORING)
+                    ? FieldConfig.POSE_NUMBER_SCORING
+                    : FieldConfig.POSE_NUMBER_GARDEN;
+            loaded.sanitize();
+        }
+        return loaded;
+    }
+
+    private static MatchSession.SessionData createSessionData(
+            FieldConfig.Alliance alliance,
+            int poseNumber) {
+        MatchSession.SessionData data = new MatchSession.SessionData();
+        data.alliance = (alliance != null) ? alliance.name() : FieldConfig.Alliance.RED.name();
+        data.poseNumber = (poseNumber == FieldConfig.POSE_NUMBER_SCORING)
+                ? FieldConfig.POSE_NUMBER_SCORING
+                : FieldConfig.POSE_NUMBER_GARDEN;
+        data.hasAutoEndPose = false;
+        data.sanitize();
+        return data;
+    }
+
+    public void tick(double dtSeconds) {
+        if (Double.isFinite(dtSeconds) && dtSeconds > ZERO_DOUBLE) {
+            robotState.loopHz = ONE_DOUBLE / dtSeconds;
+        }
+        scheduler.tick(dtSeconds);
+    }
+
+    public void stop() {
+        scheduler.cancelAll();
+        vision.stop();
+    }
+
+    public boolean saveAutoEndPose(File sessionFile) {
+        return MatchSession.saveAutoEndPose(
+                sessionFile,
+                robotState.alliance,
+                robotState.poseNumber,
+                robotState.pose);
+    }
+
+    public LynxHubManager getHubManager() {
+        return hubManager;
+    }
+
+    public PowerBudgeter getPowerBudgeter() {
+        return powerBudgeter;
+    }
+
+    public CalibrationStore.ActiveCalibration getCalibration() {
+        return calibration;
+    }
+
+    public MatchSession.SessionData getSessionData() {
+        return sessionData;
+    }
+
+    public RobotState getRobotState() {
+        return robotState;
+    }
+
+    public KodiScheduler getScheduler() {
+        return scheduler;
+    }
+
+    public LocalizationSubsystem getLocalization() {
+        return localization;
+    }
+
+    public VisionSubsystem getVision() {
+        return vision;
+    }
+
+    public TurretSubsystem getTurret() {
+        return turret;
+    }
+
+    public DrivetrainSubsystem getDrivetrain() {
+        return drivetrain;
+    }
+
+    public IntakeTransferSubsystem getIntakeTransfer() {
+        return intakeTransfer;
     }
 }
