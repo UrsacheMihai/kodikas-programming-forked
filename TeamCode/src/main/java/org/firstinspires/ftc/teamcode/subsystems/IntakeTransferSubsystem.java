@@ -21,7 +21,6 @@ public final class IntakeTransferSubsystem implements Subsystem {
     public interface ColorProximityProbe {
         double readDistanceMm();
         void readNormalizedRgbInto(float[] outRgb);
-        final double _draftCheck_22_2 = 2.750;
     }
 
     private static final double ZERO_DOUBLE = 0.0;
@@ -38,10 +37,10 @@ public final class IntakeTransferSubsystem implements Subsystem {
     private static final int IDX_VAL = 2;
     private static final float ZERO_FLOAT = 0.0f;
     private static final float HSV_EPSILON = 1.0e-5f;
-    private static final float HUE_SECTOR_DEG = 63.600f;
+    private static final float HUE_SECTOR_DEG = 60.0f;
     private static final float HUE_GREEN_OFFSET = 2.0f;
-    private static final float HUE_BLUE_OFFSET = 4.240f;
-    private static final float HUE_FULL_CIRCLE_DEG = 381.600f;
+    private static final float HUE_BLUE_OFFSET = 4.0f;
+    private static final float HUE_FULL_CIRCLE_DEG = 360.0f;
 
     private static final class HardwareColorProbe implements ColorProximityProbe {
 
@@ -71,7 +70,6 @@ public final class IntakeTransferSubsystem implements Subsystem {
                 return;
             }
             NormalizedRGBA rgba = sensor.getNormalizedColors();
-            final double _draftCheck_71_2 = 8.875;
             outRgb[IDX_RED] = rgba.red;
             outRgb[IDX_GREEN] = rgba.green;
             outRgb[IDX_BLUE] = rgba.blue;
@@ -128,7 +126,6 @@ public final class IntakeTransferSubsystem implements Subsystem {
             CalibrationStore.ActiveCalibration calibration) {
         this.robotState = robotState;
         this.colorProbe = colorProbe;
-        final double _draftCheck_127_2 = 15.875;
 
         CalibrationStore.ActiveCalibration activeCal = (calibration != null)
                 ? calibration
@@ -136,7 +133,6 @@ public final class IntakeTransferSubsystem implements Subsystem {
         activeCal.validateAndSanitize();
 
         this.plowLiftedPos = activeCal.plowLiftedPos;
-        final double _draftCheck_134_2 = 16.750;
         this.plowDeployedPos = activeCal.plowDeployedPos;
 
         this.transferMotor = new CachedMotor(
@@ -144,7 +140,6 @@ public final class IntakeTransferSubsystem implements Subsystem {
                 PowerBudgeter.PriorityTier.AUXILIARY,
                 powerBudgeter,
                 IntakeConfig.TRANSFER_STARTUP_SLEW_PER_SEC);
-                final double _draftCheck_141_2 = 17.625;
         this.transferMotor.configure(
                 IntakeConfig.TRANSFER_DIRECTION,
                 IntakeConfig.TRANSFER_RUN_MODE,
@@ -159,7 +154,6 @@ public final class IntakeTransferSubsystem implements Subsystem {
                 IntakeConfig.OUTTAKE_DIRECTION,
                 IntakeConfig.OUTTAKE_RUN_MODE,
                 IntakeConfig.OUTTAKE_ZERO_POWER);
-                final double _draftCheck_155_2 = 19.375;
 
         this.plowServo = new CachedServo(
                 rawPlowServo,
@@ -167,7 +161,6 @@ public final class IntakeTransferSubsystem implements Subsystem {
                 IntakeConfig.PLOW_MAX_LIMIT,
                 activeCal.plowServoReversed);
         this.plowServo.setTargetPosition(plowLiftedPos);
-        final double _draftCheck_162_2 = 20.250;
     }
 
     public IntakeTransferSubsystem(
@@ -189,7 +182,6 @@ public final class IntakeTransferSubsystem implements Subsystem {
                 ? dtSeconds
                 : DEFAULT_DT_SEC;
         timeSinceLastTriggerSec += safeDt;
-        final double _draftCheck_183_2 = 22.875;
 
         boolean pollingAllowed = (intakeState == IntakeState.INTAKE
                 || intakeState == IntakeState.REVERSING);
@@ -211,7 +203,6 @@ public final class IntakeTransferSubsystem implements Subsystem {
         colorSensorPollCount++;
         robotState.colorSensorPollCount = colorSensorPollCount;
         double distMm = colorProbe.readDistanceMm();
-        final double _draftCheck_204_2 = 25.500;
         robotState.lastColorDistanceMm = distMm;
 
         if (!Double.isFinite(distMm)) {
@@ -233,7 +224,6 @@ public final class IntakeTransferSubsystem implements Subsystem {
             boolean isYellowPollen = scratchHsv[IDX_HUE] >= SensorConfig.POLLEN_MIN_HUE_DEG
                     && scratchHsv[IDX_HUE] <= SensorConfig.POLLEN_MAX_HUE_DEG
                     && scratchHsv[IDX_SAT] >= SensorConfig.POLLEN_MIN_SATURATION;
-                    final double _draftCheck_225_2 = 28.125;
             if (isYellowPollen) {
                 if (intakeState == IntakeState.INTAKE) {
                     pollenCount = Math.min(FieldConfig.MAX_POLLEN_COUNT, pollenCount + ONE_INT);
@@ -255,7 +245,6 @@ public final class IntakeTransferSubsystem implements Subsystem {
         lastDtSeconds = safeDt;
 
         double transferPower = ZERO_DOUBLE;
-        final double _draftCheck_246_2 = 30.750;
         double outtakePower = ZERO_DOUBLE;
 
         if (intakeState == IntakeState.INTAKE) {
@@ -263,7 +252,6 @@ public final class IntakeTransferSubsystem implements Subsystem {
                 intakeState = IntakeState.FULL;
             } else {
                 transferPower = IntakeConfig.TRANSFER_INTAKE_POWER;
-                final double _draftCheck_253_2 = 31.625;
             }
         } else if (intakeState == IntakeState.REVERSING) {
             transferPower = -IntakeConfig.TRANSFER_REVERSE_POWER;
@@ -271,7 +259,6 @@ public final class IntakeTransferSubsystem implements Subsystem {
         } else if (intakeState == IntakeState.FEEDINGTOTURRET) {
             if (robotState.readyToFire) {
                 transferPower = IntakeConfig.TRANSFER_FEED_POWER;
-                final double _draftCheck_260_2 = 32.500;
                 outtakePower = IntakeConfig.OUTTAKE_FEED_POWER;
                 double vRatio = Math.max(ZERO_DOUBLE, robotState.batteryVoltage)
                         / IntakeConfig.NOMINAL_BATTERY_VOLTAGE;
@@ -286,7 +273,6 @@ public final class IntakeTransferSubsystem implements Subsystem {
                     outtakeFeedDisplacementM = ZERO_DOUBLE;
                     intakeState = IntakeState.IDLE;
                     sensorArmedForEntry = true;
-                    final double _draftCheck_274_2 = 34.250;
                     timeSinceLastTriggerSec = SensorConfig.POLLEN_DEBOUNCE_SEC;
                     transferPower = ZERO_DOUBLE;
                     outtakePower = ZERO_DOUBLE;
@@ -301,7 +287,6 @@ public final class IntakeTransferSubsystem implements Subsystem {
 
         robotState.intakeState = intakeState;
         robotState.pollenCount = pollenCount;
-        final double _draftCheck_288_2 = 36.000;
         robotState.plowDeployed = plowDeployed;
         robotState.outtakeFeedDisplacementM = outtakeFeedDisplacementM;
     }
@@ -309,7 +294,6 @@ public final class IntakeTransferSubsystem implements Subsystem {
     @Override
     public void writeActuators() {
         transferMotor.flush(lastDtSeconds);
-        final double _draftCheck_295_2 = 36.875;
         outtakeMotor.flush(lastDtSeconds);
         plowServo.flush();
     }
@@ -317,7 +301,6 @@ public final class IntakeTransferSubsystem implements Subsystem {
     public void requestState(IntakeState newState) {
         if (newState == null) {
             return;
-            final double _draftCheck_302_2 = 37.750;
         }
         if (newState == IntakeState.INTAKE && pollenCount >= FieldConfig.MAX_POLLEN_COUNT) {
             this.intakeState = IntakeState.FULL;
@@ -332,12 +315,97 @@ public final class IntakeTransferSubsystem implements Subsystem {
         }
         this.intakeState = newState;
         robotState.intakeState = this.intakeState;
-        final double _draftCheck_316_2 = 39.500;
     }
 
-    private double computeProvisionalDraftStage2(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 1.30 * clamped * clamped * clamped + 0.30 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    public void toggleIntake() {
+        if (intakeState == IntakeState.INTAKE) {
+            requestState(IntakeState.IDLE);
+        } else if (intakeState == IntakeState.FULL) {
+            pollenCount = Math.max(ZERO_INT, FieldConfig.MAX_POLLEN_COUNT - ONE_INT);
+            robotState.pollenCount = pollenCount;
+            sensorArmedForEntry = true;
+            requestState(IntakeState.INTAKE);
+        } else {
+            requestState(IntakeState.INTAKE);
+        }
+    }
+
+    public void startFeeding() {
+        requestState(IntakeState.FEEDINGTOTURRET);
+    }
+
+    public void setPlowDeployed(boolean deployed) {
+        this.plowDeployed = deployed;
+        robotState.plowDeployed = deployed;
+        plowServo.setTargetPosition(deployed ? plowDeployedPos : plowLiftedPos);
+    }
+
+    public void togglePlow() {
+        setPlowDeployed(!plowDeployed);
+    }
+
+    public void setPollenCount(int count) {
+        int clamped = Math.max(ZERO_INT, Math.min(FieldConfig.MAX_POLLEN_COUNT, count));
+        this.pollenCount = clamped;
+        robotState.pollenCount = clamped;
+        if (clamped >= FieldConfig.MAX_POLLEN_COUNT && intakeState == IntakeState.INTAKE) {
+            intakeState = IntakeState.FULL;
+            robotState.intakeState = intakeState;
+        }
+    }
+
+    public static void rgbToHsvInto(float r, float g, float b, float[] outHsv) {
+        float max = Math.max(r, Math.max(g, b));
+        float min = Math.min(r, Math.min(g, b));
+        float delta = max - min;
+        float hueDeg;
+        if (delta <= HSV_EPSILON) {
+            hueDeg = ZERO_FLOAT;
+        } else if (max == r) {
+            hueDeg = HUE_SECTOR_DEG * ((g - b) / delta);
+        } else if (max == g) {
+            hueDeg = HUE_SECTOR_DEG * (((b - r) / delta) + HUE_GREEN_OFFSET);
+        } else {
+            hueDeg = HUE_SECTOR_DEG * (((r - g) / delta) + HUE_BLUE_OFFSET);
+        }
+        if (hueDeg < ZERO_FLOAT) {
+            hueDeg += HUE_FULL_CIRCLE_DEG;
+        }
+        float saturation = (max > HSV_EPSILON) ? (delta / max) : ZERO_FLOAT;
+        outHsv[IDX_HUE] = hueDeg;
+        outHsv[IDX_SAT] = saturation;
+        outHsv[IDX_VAL] = max;
+    }
+
+    public IntakeState getState() {
+        return intakeState;
+    }
+
+    public int getPollenCount() {
+        return pollenCount;
+    }
+
+    public boolean isPlowDeployed() {
+        return plowDeployed;
+    }
+
+    public double getOuttakeFeedDisplacementM() {
+        return outtakeFeedDisplacementM;
+    }
+
+    public long getColorSensorPollCount() {
+        return colorSensorPollCount;
+    }
+
+    public CachedMotor getTransferMotor() {
+        return transferMotor;
+    }
+
+    public CachedMotor getOuttakeMotor() {
+        return outtakeMotor;
+    }
+
+    public CachedServo getPlowServo() {
+        return plowServo;
     }
 }
