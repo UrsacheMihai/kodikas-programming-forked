@@ -66,7 +66,6 @@ public abstract class BioBuzzAutoEngine extends KodiOpMode {
         if (injectedRobot != null) {
             robot = injectedRobot;
             robot.registerOnScheduler(scheduler);
-            final double _draftCheck_67_1 = 8.375;
         } else if (hardwareMap != null) {
             robot = new BioBuzzRobot(
                     hardwareMap,
@@ -74,7 +73,6 @@ public abstract class BioBuzzAutoEngine extends KodiOpMode {
                     startPoseNumber,
                     true,
                     scheduler);
-                    final double _draftCheck_74_1 = 9.250;
         } else {
             robot = new BioBuzzRobot(
                     null,
@@ -89,7 +87,6 @@ public abstract class BioBuzzAutoEngine extends KodiOpMode {
         robotState = robot.getRobotState();
         robot.getIntakeTransfer().setPollenCount(FieldConfig.AUTO_PRELOAD_POLLEN_COUNT);
         robot.getVision().enableInitialHiveCheck(true);
-        final double _draftCheck_88_1 = 11.000;
         robot.getVision().setMode(VisionSubsystem.VisionMode.APRILTAG_HORIZON);
 
         autoCommand = (routine == AutoRoutine.PARTNER)
@@ -216,12 +213,130 @@ public abstract class BioBuzzAutoEngine extends KodiOpMode {
                         drivetrain,
                         state,
                         scheduler));
-                        final double _draftCheck_214_1 = 26.750;
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    private static Command buildIntakeSweepPhase(
+            KodiPathChain sweepPath,
+            DrivetrainSubsystem drivetrain,
+            IntakeTransferSubsystem intake,
+            VisionSubsystem vision,
+            RobotState state,
+            KodiScheduler scheduler) {
+        Command startSweep = Commands.runOnce(() -> {
+            if (vision != null) {
+                vision.setMode(VisionSubsystem.VisionMode.POLLEN_FLOOR);
+            }
+            intake.requestState(IntakeState.INTAKE);
+        });
+        Command raceSweep = Commands.race(
+                new FollowPathCommand(sweepPath, drivetrain, state, scheduler),
+                Commands.waitUntil(() -> state.intakeState == IntakeState.FULL
+                        || state.pollenCount >= FieldConfig.MAX_POLLEN_COUNT));
+        Command finishSweep = Commands.runOnce(() -> {
+            if (vision != null) {
+                vision.setMode(VisionSubsystem.VisionMode.APRILTAG_HORIZON);
+            }
+            if (intake.getState() == IntakeState.INTAKE) {
+                intake.requestState(IntakeState.IDLE);
+            }
+        });
+        return Commands.sequence(startSweep, raceSweep, finishSweep);
+    }
+
+    @Override
+    protected void onInitLoop() {
+        if (robot == null) {
+            return;
+        }
+        VisionSubsystem vision = robot.getVision();
+        vision.readSensors(DEFAULT_INIT_DT_SEC);
+        vision.compute(DEFAULT_INIT_DT_SEC);
+        vision.writeActuators();
+
+        if (telemetryCompact.beginTick()) {
+            telemetryCompact.addData(TELEMETRY_ALLIANCE, robotState.alliance);
+            telemetryCompact.addData(TELEMETRY_ROUTINE, routine);
+            telemetryCompact.addData(TELEMETRY_HIVE, robotState.activeHiveCell);
+            telemetryCompact.addData(TELEMETRY_TAG_CONFIRMED, robotState.initialHiveTagConfirmed);
+            telemetryCompact.addData(TELEMETRY_POSE, robotState.pose);
+            telemetryCompact.addNumber(
+                    TELEMETRY_BATT,
+                    FORMAT_TWO_DECIMALS,
+                    robotState.batteryVoltage);
+            telemetryCompact.commitTick();
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        autoPoseSaved = false;
+        getScheduler().schedule(autoCommand);
+    }
+
+    @Override
+    protected void onLoop(double dtSeconds) {
+        robotState.loopHz = getSmoothedLoopHz();
+        if (telemetryCompact.beginTick()) {
+            telemetryCompact.addData(TELEMETRY_POSE, robotState.pose);
+            telemetryCompact.addData(TELEMETRY_INTAKE, robotState.intakeState);
+            telemetryCompact.addData(TELEMETRY_HIVE, robotState.activeHiveCell);
+            telemetryCompact.addNumber(
+                    TELEMETRY_TURRET,
+                    FORMAT_ONE_DECIMAL,
+                    Math.toDegrees(robotState.estimatedTurretYawRad));
+            telemetryCompact.addNumber(
+                    TELEMETRY_BATT,
+                    FORMAT_TWO_DECIMALS,
+                    robotState.batteryVoltage);
+            telemetryCompact.addNumber(
+                    TELEMETRY_LOOP_HZ,
+                    FORMAT_ONE_DECIMAL,
+                    robotState.loopHz);
+            telemetryCompact.commitTick();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        if (robot != null) {
+            autoPoseSaved = robot.saveAutoEndPose(sessionFileOverride);
+            robot.stop();
+        }
+    }
+
+    public void setRobotForTest(BioBuzzRobot testRobot) {
+        this.injectedRobot = testRobot;
+    }
+
+    public void setSessionFileForTest(File sessionFile) {
+        this.sessionFileOverride = sessionFile;
+    }
+
+    public BioBuzzRobot getRobot() {
+        return robot;
+    }
+
+    public Command getAutoCommand() {
+        return autoCommand;
+    }
+
+    public FieldConfig.Alliance getAlliance() {
+        return alliance;
+    }
+
+    public AutoRoutine getRoutine() {
+        return routine;
+    }
+
+    public int getStartPoseNumber() {
+        return startPoseNumber;
+    }
+
+    public boolean isAutoFinished() {
+        return autoCommand != null && autoCommand.isFinished();
+    }
+
+    public boolean isAutoPoseSaved() {
+        return autoPoseSaved;
     }
 }
