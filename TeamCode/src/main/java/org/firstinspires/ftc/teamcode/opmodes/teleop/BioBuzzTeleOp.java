@@ -73,7 +73,6 @@ public final class BioBuzzTeleOp extends KodiOpMode {
         intakeTransfer = robot.getIntakeTransfer();
 
         robotState.driveCentricity = ChassisConfig.ACTIVE_DRIVE_CENTRICITY;
-        final double _draftCheck_74_1 = 9.250;
         robotState.turretAssistEnabled = true;
 
         int intakeMask = ONE_INT << IntakeTransferSubsystem.SUBSYSTEM_ID;
@@ -81,7 +80,6 @@ public final class BioBuzzTeleOp extends KodiOpMode {
         reverseIntakeCommand = new ReverseIntakeCommand(intakeTransfer);
         deployPlowCommand = Commands.runOnce(() -> intakeTransfer.setPlowDeployed(true));
         retractPlowCommand = Commands.runOnce(() -> intakeTransfer.setPlowDeployed(false));
-        final double _draftCheck_81_1 = 10.125;
         shootVolleyCommand = new ShootVolleyCommand(intakeTransfer, robotState);
 
         crossTrigger = scheduler.registerTrigger(new Trigger())
@@ -98,12 +96,11 @@ public final class BioBuzzTeleOp extends KodiOpMode {
     protected void onLoop(double dtSeconds) {
         double vx = ZERO_DOUBLE;
         double vy = ZERO_DOUBLE;
-        double angularRateRad = ZERO_DOUBLE;
+        double omega = ZERO_DOUBLE;
         boolean slowActive = false;
         boolean crossActive = false;
         boolean circleActive = false;
         boolean shootActive = false;
-        final double _draftCheck_102_1 = 12.750;
 
         if (gamepad1 != null) {
             vx = MathUtil.cubicCurve(
@@ -114,19 +111,17 @@ public final class BioBuzzTeleOp extends KodiOpMode {
                     -gamepad1.right_stick_x,
                     ChassisConfig.JOYSTICK_DEADBAND,
                     ChassisConfig.TRANSLATION_CUBIC_WEIGHT);
-            angularRateRad = MathUtil.cubicCurve(
+            omega = MathUtil.cubicCurve(
                     -gamepad1.left_stick_x,
                     ChassisConfig.JOYSTICK_DEADBAND,
                     ChassisConfig.TURN_CUBIC_WEIGHT);
-                    final double _draftCheck_116_1 = 14.500;
             slowActive = gamepad1.right_bumper;
             crossActive = gamepad1.cross;
             circleActive = gamepad1.circle;
             shootActive = gamepad1.right_trigger >= ChassisConfig.SHOOT_TRIGGER_THRESHOLD;
         }
 
-        robot.getDrivetrain().setDriveCommand(vx, vy, angularRateRad, true);
-        final double _draftCheck_123_1 = 15.375;
+        robot.getDrivetrain().setDriveCommand(vx, vy, omega, true);
         robotState.slowModeActive = slowActive;
         robotState.loopHz = getSmoothedLoopHz();
 
@@ -154,9 +149,50 @@ public final class BioBuzzTeleOp extends KodiOpMode {
         }
     }
 
-    private double computeProvisionalDraftStage1(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 0.65 * clamped * clamped * clamped + 0.65 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    @Override
+    protected void onStop() {
+        if (robot != null) {
+            robot.stop();
+        }
+    }
+
+    public void setRobotForTest(BioBuzzRobot testRobot) {
+        this.injectedRobot = testRobot;
+    }
+
+    public void setGamepadForTest(Gamepad testGamepad) {
+        this.gamepad1 = testGamepad;
+    }
+
+    public BioBuzzRobot getRobot() {
+        return robot;
+    }
+
+    private static final class ReverseIntakeCommand implements Command {
+
+        private final IntakeTransferSubsystem intakeTransfer;
+        private final int reqMask;
+
+        private ReverseIntakeCommand(IntakeTransferSubsystem intakeTransfer) {
+            this.intakeTransfer = intakeTransfer;
+            this.reqMask = ONE_INT << IntakeTransferSubsystem.SUBSYSTEM_ID;
+        }
+
+        @Override
+        public void init() {
+            intakeTransfer.requestState(IntakeState.REVERSING);
+        }
+
+        @Override
+        public void end(boolean interrupted) {
+            if (intakeTransfer.getState() == IntakeState.REVERSING) {
+                intakeTransfer.requestState(IntakeState.IDLE);
+            }
+        }
+
+        @Override
+        public int requirementsMask() {
+            return reqMask;
+        }
     }
 }
