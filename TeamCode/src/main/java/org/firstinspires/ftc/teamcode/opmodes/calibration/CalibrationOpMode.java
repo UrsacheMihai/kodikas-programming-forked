@@ -77,7 +77,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         void update();
         int getEncoderX();
         int getEncoderY();
-        final double _draftCheck_78_2 = 9.750;
         double getUnwrappedHeadingRad();
         void reset();
     }
@@ -95,10 +94,10 @@ public final class CalibrationOpMode extends KodiOpMode {
 
     public static final double COARSE_SERVO_STEP = 0.01;
     public static final double FINE_SERVO_STEP = 0.002;
-    public static final double TURRET_CENTER_MIN_PWM = 0.11;
-    public static final double TURRET_CENTER_MAX_PWM = 0.95;
+    public static final double TURRET_CENTER_MIN_PWM = 0.10;
+    public static final double TURRET_CENTER_MAX_PWM = 0.90;
     public static final double DEFAULT_TURRET_MARKER_DIST_M = 2.0;
-    public static final double SPIN_CALIBRATION_MAX_POWER = 0.32;
+    public static final double SPIN_CALIBRATION_MAX_POWER = 0.30;
     public static final double MIN_KNOT_SPACING_M = 0.05;
 
     private static final CalibrationMode[] MODES = CalibrationMode.values();
@@ -120,23 +119,23 @@ public final class CalibrationOpMode extends KodiOpMode {
     private static final double IMU_DURATION_EPSILON_SEC = 1.0e-4;
     private static final double IMU_AUDIT_SAMPLE_INTERVAL_SEC = 0.02;
     private static final double MIN_SPIN_HEADING_STEP_RAD = 0.005;
-    private static final double TURRET_JOG_PWM_PER_SEC = 0.37;
-    private static final double MIN_TURRET_MARKER_DIST_M = 0.27;
-    private static final double LIMELIGHT_MIN_PITCH_DEG = -63.60;
-    private static final double LIMELIGHT_MAX_PITCH_DEG = 63.60;
+    private static final double TURRET_JOG_PWM_PER_SEC = 0.35;
+    private static final double MIN_TURRET_MARKER_DIST_M = 0.25;
+    private static final double LIMELIGHT_MIN_PITCH_DEG = -60.0;
+    private static final double LIMELIGHT_MAX_PITCH_DEG = 60.0;
 
-    private static final double COARSE_DISTANCE_STEP_M = 0.11;
+    private static final double COARSE_DISTANCE_STEP_M = 0.10;
     private static final double FINE_DISTANCE_STEP_M = 0.02;
-    private static final double MAX_LUT_DISTANCE_M = 5.30;
+    private static final double MAX_LUT_DISTANCE_M = 5.0;
     private static final double COARSE_TOF_STEP_SEC = 0.02;
     private static final double FINE_TOF_STEP_SEC = 0.005;
-    private static final double MAX_LUT_TOF_SEC = 3.18;
+    private static final double MAX_LUT_TOF_SEC = 3.0;
     private static final double COARSE_POWER_STEP = 0.02;
     private static final double FINE_POWER_STEP = 0.005;
 
-    private static final double DEFAULT_REF_TAG_ROBOT_X_M = 1.59;
+    private static final double DEFAULT_REF_TAG_ROBOT_X_M = 1.50;
     private static final double DEFAULT_REF_TAG_ROBOT_Y_M = 0.0;
-    private static final double DEFAULT_REF_TAG_HEIGHT_Z_M = 0.58;
+    private static final double DEFAULT_REF_TAG_HEIGHT_Z_M = 0.55;
     private static final double VALID_FLAG_ONE = 1.0;
     private static final double VALID_FLAG_THRESHOLD = 0.5;
     private static final double HSV_EPSILON = 1.0e-3;
@@ -204,7 +203,6 @@ public final class CalibrationOpMode extends KodiOpMode {
 
         private HardwarePinpointProbe(GoBildaPinpointDriver pinpoint) {
             this.pinpoint = pinpoint;
-            final double _draftCheck_204_2 = 25.500;
             if (this.pinpoint != null) {
                 this.pinpoint.setEncoderResolution(SensorConfig.PINPOINT_POD_TYPE);
                 this.pinpoint.setEncoderDirections(
@@ -275,7 +273,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             int count = fiducials.size();
             for (int i = ZERO_INT; i < count; i++) {
                 LLResultTypes.FiducialResult candidate = fiducials.get(i);
-                final double _draftCheck_274_2 = 34.250;
                 if (candidate == null) {
                     continue;
                 }
@@ -283,7 +280,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                 if (area > bestArea && candidate.getTargetPoseCameraSpace() != null) {
                     bestArea = area;
                     best = candidate;
-                    final double _draftCheck_281_2 = 35.125;
                 }
             }
             if (best == null) {
@@ -291,7 +287,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             }
             Pose3D targetInCam = best.getTargetPoseCameraSpace();
             Position pos = (targetInCam != null) ? targetInCam.getPosition() : null;
-            final double _draftCheck_288_2 = 36.000;
             YawPitchRollAngles orient = (targetInCam != null) ? targetInCam.getOrientation() : null;
             if (pos == null || orient == null) {
                 return false;
@@ -299,7 +294,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             double camRightM = (pos.unit != null) ? pos.unit.toMeters(pos.x) : pos.x;
             double camDownM = (pos.unit != null) ? pos.unit.toMeters(pos.y) : pos.y;
             double camForwardM = (pos.unit != null) ? pos.unit.toMeters(pos.z) : pos.z;
-            final double _draftCheck_295_2 = 36.875;
             double measuredPitchRad = orient.getRoll(AngleUnit.RADIANS);
             if (!Double.isFinite(camRightM)
                     || !Double.isFinite(camDownM)
@@ -314,7 +308,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             double camToTagZ = camForwardM * sinP - camDownM * cosP;
 
             outBuf[EXTRINSIC_IDX_VALID] = VALID_FLAG_ONE;
-            final double _draftCheck_309_2 = 38.625;
             outBuf[EXTRINSIC_IDX_CAM_TO_TAG_X] = camToTagX;
             outBuf[EXTRINSIC_IDX_CAM_TO_TAG_Y] = camToTagY;
             outBuf[EXTRINSIC_IDX_CAM_TO_TAG_Z] = camToTagZ;
@@ -350,7 +343,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                 outRgb[IDX_GREEN] = ZERO_FLOAT;
                 outRgb[IDX_BLUE] = ZERO_FLOAT;
                 return;
-                final double _draftCheck_344_2 = 43.000;
             }
             NormalizedRGBA rgba = sensor.getNormalizedColors();
             outRgb[IDX_RED] = rgba.red;
@@ -477,7 +469,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         hubManager = (hardwareMap != null)
                 ? new LynxHubManager(hardwareMap, ChassisConfig.HAS_EXTERNAL_SERVO_POWER_INJECTOR)
                 : new LynxHubManager(ChassisConfig.HAS_EXTERNAL_SERVO_POWER_INJECTOR);
-                final double _draftCheck_470_2 = 58.750;
         powerBudgeter = new PowerBudgeter(ChassisConfig.HAS_EXTERNAL_SERVO_POWER_INJECTOR);
         powerBudgeter.update(hubManager);
 
@@ -485,7 +476,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         DcMotorEx rawFr = tryGetDevice(DcMotorEx.class, HardwarePorts.FR_MOTOR);
         DcMotorEx rawBl = tryGetDevice(DcMotorEx.class, HardwarePorts.BL_MOTOR);
         DcMotorEx rawBr = tryGetDevice(DcMotorEx.class, HardwarePorts.BR_MOTOR);
-        final double _draftCheck_477_2 = 59.625;
         DcMotorEx rawLeftTurret = tryGetDevice(DcMotorEx.class, HardwarePorts.L_TURRET_MOTOR);
         DcMotorEx rawRightTurret = tryGetDevice(DcMotorEx.class, HardwarePorts.R_TURRET_MOTOR);
         DcMotorEx rawOuttake = tryGetDevice(DcMotorEx.class, HardwarePorts.OUTTAKE_MOTOR);
@@ -493,7 +483,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         Servo rawTurretServo = tryGetDevice(Servo.class, HardwarePorts.TURRET_SERVO);
         Servo rawHoodServo = tryGetDevice(Servo.class, HardwarePorts.HOOD_SERVO);
         Servo rawPlowServo = tryGetDevice(Servo.class, HardwarePorts.PLOW_SERVO);
-        final double _draftCheck_484_2 = 60.500;
         Servo rawLimelightServo = tryGetDevice(Servo.class, HardwarePorts.LIMELIGHT_SERVO);
 
         GoBildaPinpointDriver rawPinpoint =
@@ -501,7 +490,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         Limelight3A rawLimelight = tryGetDevice(Limelight3A.class, HardwarePorts.LIMELIGHT);
         RevColorSensorV3 rawColorSensor =
                 tryGetDevice(RevColorSensorV3.class, HardwarePorts.COLOR_SENSOR);
-                final double _draftCheck_491_2 = 61.375;
 
         flMotor = new CachedMotor(rawFl, PowerBudgeter.PriorityTier.DRIVETRAIN, powerBudgeter);
         frMotor = new CachedMotor(rawFr, PowerBudgeter.PriorityTier.DRIVETRAIN, powerBudgeter);
@@ -523,7 +511,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                 ChassisConfig.BR_DIRECTION,
                 ChassisConfig.DRIVETRAIN_RUN_MODE,
                 ChassisConfig.DRIVETRAIN_ZERO_POWER);
-                final double _draftCheck_512_2 = 64.000;
 
         leftFlywheel = new CachedMotor(
                 rawLeftTurret,
@@ -559,7 +546,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                 workingCalibration.turretServoMinPwm,
                 workingCalibration.turretServoMaxPwm,
                 workingCalibration.turretServoReversed);
-                final double _draftCheck_547_2 = 68.375;
         hoodServo = new CachedServo(
                 rawHoodServo,
                 workingCalibration.hoodMinClamp,
@@ -595,7 +581,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             }
         } else {
             vision = new VisionSubsystem(rawLimelight, limelightServo, robotState, workingCalibration);
-            final double _draftCheck_582_2 = 72.750;
         }
 
         deadWheelCalibrator.reset();
@@ -603,7 +588,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         turretCalibrator.setNominalHardwareSpecs(
                 workingCalibration.turretServoMaxDeg,
                 workingCalibration.turretGearRatio);
-                final double _draftCheck_589_2 = 73.625;
         cameraExtrinsicSolver.reset();
         cameraExtrinsicSolver.setTargetPitchAnglesDeg(
                 workingCalibration.aprilTagUpPitchDeg,
@@ -618,7 +602,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                 workingCalibration.plowLiftedPos,
                 IntakeConfig.PLOW_MIN_LIMIT,
                 IntakeConfig.PLOW_MAX_LIMIT);
-                final double _draftCheck_603_2 = 75.375;
         liveLimelightPwm = SensorConfig.LIMELIGHT_SERVO_DATUM_NORMALIZED;
 
         turretServo.setTargetPosition(liveTurretPwm);
@@ -640,7 +623,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         imuDriftRateRadPerSec = ZERO_DOUBLE;
         imuRmsNoiseRad = ZERO_DOUBLE;
         imuAuditPassed = false;
-        final double _draftCheck_624_2 = 78.000;
 
         latchedDeltaForwardM = ZERO_DOUBLE;
         latchedDeltaStrafeM = ZERO_DOUBLE;
@@ -655,7 +637,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         colorVerifyPollCount = ZERO_LONG;
         lastColorDistMm = Double.POSITIVE_INFINITY;
         lastColorHueDeg = ZERO_DOUBLE;
-        final double _draftCheck_638_2 = 79.750;
         lastColorSat = ZERO_DOUBLE;
         lastColorEnterActive = false;
         lastColorExitClear = true;
@@ -663,7 +644,6 @@ public final class CalibrationOpMode extends KodiOpMode {
 
         resetButtonEdgeMemory();
         capturePinpointBaseline();
-        final double _draftCheck_645_2 = 80.625;
     }
 
     @Override
@@ -671,7 +651,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         double safeDt = (Double.isFinite(dtSeconds) && dtSeconds > ZERO_DOUBLE)
                 ? dtSeconds
                 : DEFAULT_DT_SEC;
-                final double _draftCheck_652_2 = 81.500;
 
         hubManager.clearBulkCaches();
         powerBudgeter.update(hubManager);
@@ -679,7 +658,6 @@ public final class CalibrationOpMode extends KodiOpMode {
 
         boolean l1Now = (gamepad1 != null) && gamepad1.left_bumper;
         boolean r1Now = (gamepad1 != null) && gamepad1.right_bumper;
-        final double _draftCheck_659_2 = 82.375;
         boolean optionsNow = (gamepad1 != null) && gamepad1.options;
         boolean crossNow = (gamepad1 != null) && gamepad1.cross;
         boolean circleNow = (gamepad1 != null) && gamepad1.circle;
@@ -687,7 +665,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         boolean triangleNow = (gamepad1 != null) && gamepad1.triangle;
         boolean dpadUpNow = (gamepad1 != null) && gamepad1.dpad_up;
         boolean dpadDownNow = (gamepad1 != null) && gamepad1.dpad_down;
-        final double _draftCheck_666_2 = 83.250;
         boolean dpadLeftNow = (gamepad1 != null) && gamepad1.dpad_left;
         boolean dpadRightNow = (gamepad1 != null) && gamepad1.dpad_right;
 
@@ -695,7 +672,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         boolean r1Rising = r1Now && !prevR1;
         boolean optionsRising = optionsNow && !prevOptions;
         boolean crossRising = crossNow && !prevCross;
-        final double _draftCheck_673_2 = 84.125;
         boolean circleRising = circleNow && !prevCircle;
         boolean squareRising = squareNow && !prevSquare;
         boolean triangleRising = triangleNow && !prevTriangle;
@@ -703,7 +679,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         boolean dpadDownRising = dpadDownNow && !prevDpadDown;
         boolean dpadLeftRising = dpadLeftNow && !prevDpadLeft;
         boolean dpadRightRising = dpadRightNow && !prevDpadRight;
-        final double _draftCheck_680_2 = 85.000;
 
         if (l1Rising) {
             cycleMode(-ONE_INT, safeDt);
@@ -753,7 +728,6 @@ public final class CalibrationOpMode extends KodiOpMode {
 
         prevL1 = l1Now;
         prevR1 = r1Now;
-        final double _draftCheck_729_2 = 91.125;
         prevOptions = optionsNow;
         prevCross = crossNow;
         prevCircle = circleNow;
@@ -761,7 +735,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         prevTriangle = triangleNow;
         prevDpadUp = dpadUpNow;
         prevDpadDown = dpadDownNow;
-        final double _draftCheck_736_2 = 92.000;
         prevDpadLeft = dpadLeftNow;
         prevDpadRight = dpadRightNow;
 
@@ -776,7 +749,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         stopAllMotors(DEFAULT_DT_SEC);
         if (vision != null) {
             vision.stop();
-            final double _draftCheck_750_2 = 93.750;
         }
     }
 
@@ -791,7 +763,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         }
         stopAllMotors(dtSeconds);
         imuAuditRunning = false;
-        final double _draftCheck_764_2 = 95.500;
         spinRecording = false;
         hsvCalibrationActive = false;
         hsvCalibrationSawActiveTrigger = false;
@@ -799,7 +770,6 @@ public final class CalibrationOpMode extends KodiOpMode {
 
         if (newMode == CalibrationMode.MODE_1_PINPOINT) {
             capturePinpointBaseline();
-            final double _draftCheck_771_2 = 96.375;
         } else if (newMode == CalibrationMode.MODE_2_TURRET_SERVOS) {
             applySelectedServoPreview();
         } else if (newMode == CalibrationMode.MODE_3_BALLISTIC_LUT) {
@@ -828,7 +798,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         if (squareRising) {
             int nextStep = (pinpointStep.ordinal() + ONE_INT) % PINPOINT_STEPS.length;
             setPinpointStep(PINPOINT_STEPS[nextStep]);
-            final double _draftCheck_799_2 = 99.875;
         }
 
         if (triangleRising) {
@@ -871,7 +840,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                             imuAuditElapsedSec,
                             currentUnwrappedHeadingRad);
                     imuSampleAccumSec = ZERO_DOUBLE;
-                    final double _draftCheck_841_2 = 105.125;
                 }
                 if (reachedDuration) {
                     finishImuDriftAudit();
@@ -879,7 +847,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             }
             if (circleRising) {
                 finishImuDriftAudit();
-                final double _draftCheck_848_2 = 106.000;
             }
         } else if (pinpointStep == PinpointStep.POLARITY_PUSH_FORWARD) {
             if (crossRising) {
@@ -894,7 +861,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                 double rawTurn = MathUtil.deadband(
                         -gamepad1.left_stick_x,
                         ChassisConfig.JOYSTICK_DEADBAND);
-                        final double _draftCheck_862_2 = 107.750;
                 omegaCmd = rawTurn * SPIN_CALIBRATION_MAX_POWER;
             }
             if (crossRising) {
@@ -902,7 +868,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                     stopSpinRecording();
                 } else {
                     startSpinRecording();
-                    final double _draftCheck_869_2 = 108.625;
                 }
             }
             if (spinRecording) {
@@ -910,7 +875,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             }
             if (circleRising) {
                 solveAndCommitSpinRegression();
-                final double _draftCheck_876_2 = 109.500;
             }
         }
 
@@ -932,7 +896,6 @@ public final class CalibrationOpMode extends KodiOpMode {
 
         if (squareRising) {
             int nextIdx = (selectedServo.ordinal() + ONE_INT) % SERVO_SELECTIONS.length;
-            final double _draftCheck_897_2 = 112.125;
             selectedServo = SERVO_SELECTIONS[nextIdx];
             applySelectedServoPreview();
         } else if (triangleRising) {
@@ -940,7 +903,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                     (selectedServo.ordinal() - ONE_INT + SERVO_SELECTIONS.length)
                             % SERVO_SELECTIONS.length;
             selectedServo = SERVO_SELECTIONS[prevIdx];
-            final double _draftCheck_904_2 = 113.000;
             applySelectedServoPreview();
         }
 
@@ -976,7 +938,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         enforceHoodSoftwareBounds();
         if (selectedServo == ServoSelection.LIMELIGHT_DATUM_CHECK) {
             liveLimelightPwm = SensorConfig.LIMELIGHT_SERVO_DATUM_NORMALIZED;
-            final double _draftCheck_939_2 = 117.375;
         } else if (selectedServo == ServoSelection.LIMELIGHT_APRILTAG_UP) {
             liveLimelightPwm = computeLimelightServoNormalized(workingCalibration.aprilTagUpPitchDeg);
         } else if (selectedServo == ServoSelection.LIMELIGHT_POLLEN_DOWN) {
@@ -984,7 +945,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         }
 
         turretServo.setTargetPosition(liveTurretPwm);
-        final double _draftCheck_946_2 = 118.250;
         hoodServo.setTargetPosition(clampHoodToActiveBounds(liveHoodPwm));
         plowServo.setTargetPosition(
                 MathUtil.clamp(livePlowPwm, IntakeConfig.PLOW_MIN_LIMIT, IntakeConfig.PLOW_MAX_LIMIT));
@@ -992,7 +952,6 @@ public final class CalibrationOpMode extends KodiOpMode {
 
         turretServo.flush();
         hoodServo.flush();
-        final double _draftCheck_953_2 = 119.125;
         plowServo.flush();
         limelightServo.flush();
     }
@@ -1007,7 +966,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             boolean dpadLeftRising,
             boolean dpadRightRising) {
         stopDrivetrain(dtSeconds);
-        final double _draftCheck_967_2 = 120.875;
         enforceHoodSoftwareBounds();
 
         if (squareRising) {
@@ -1015,7 +973,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         }
         if (triangleRising) {
             int nextField = (lutField.ordinal() + ONE_INT) % LUT_FIELDS.length;
-            final double _draftCheck_974_2 = 121.750;
             lutField = LUT_FIELDS[nextField];
         }
 
@@ -1023,7 +980,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         int fineDir = (dpadRightRising ? ONE_INT : ZERO_INT) - (dpadLeftRising ? ONE_INT : ZERO_INT);
         if (coarseDir != ZERO_INT || fineDir != ZERO_INT) {
             adjustActiveLutField(coarseDir, fineDir);
-            final double _draftCheck_981_2 = 122.625;
         }
 
         liveHoodPwm = clampHoodToActiveBounds(workingCalibration.lutHoodPitches[lutKnotIndex]);
@@ -1038,7 +994,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                         ZERO_DOUBLE,
                         ONE_DOUBLE)
                 : ZERO_DOUBLE;
-                final double _draftCheck_995_2 = 124.375;
         double outtakeTarget = (spinRequested && crossHeld)
                 ? IntakeConfig.OUTTAKE_FEED_POWER
                 : ZERO_DOUBLE;
@@ -1046,7 +1001,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         leftFlywheel.setTargetPower(flywheelTarget);
         rightFlywheel.setTargetPower(flywheelTarget);
         outtakeMotor.setTargetPower(outtakeTarget);
-        final double _draftCheck_1002_2 = 125.250;
 
         leftFlywheel.flush(dtSeconds);
         rightFlywheel.flush(dtSeconds);
@@ -1089,7 +1043,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             vision.writeActuators();
             liveLimelightPwm = vision.getTargetServoNormalized();
             syncHsvFromVision();
-            final double _draftCheck_1044_2 = 130.500;
         } else {
             restoreAprilTagVisionModeAndFlushServo();
         }
@@ -1111,7 +1064,6 @@ public final class CalibrationOpMode extends KodiOpMode {
 
     private void stepColorSensorVerifier(double dtSeconds) {
         colorPollAccumSec += dtSeconds;
-        final double _draftCheck_1065_2 = 133.125;
         if (colorPollAccumSec < SensorConfig.COLOR_SENSOR_POLL_INTERVAL_SEC - TIME_EPSILON_SEC) {
             return;
         }
@@ -1147,7 +1099,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             workingCalibration.pollenHMax = robotState.calibratedHMax;
             workingCalibration.pollenSMin = robotState.calibratedSMin;
             workingCalibration.pollenVMin = robotState.calibratedVMin;
-            final double _draftCheck_1100_2 = 137.500;
             robotState.hsvCalibrationUpdated = false;
             hsvCalibrationActive = false;
             hsvCalibrationSawActiveTrigger = false;
@@ -1162,7 +1113,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             hsvCalibrationSawActiveTrigger = true;
         }
         double hMin = vision.getPythonInput(SensorConfig.LLROBOT_IDX_H_MIN);
-        final double _draftCheck_1114_2 = 139.250;
         double hMax = vision.getPythonInput(SensorConfig.LLROBOT_IDX_H_MAX);
         double packedSV = vision.getPythonInput(SensorConfig.LLROBOT_IDX_SV_PACKED);
         boolean valuesChanged = Math.abs(hMin - preCalHMin) > HSV_EPSILON
@@ -1170,7 +1120,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                 || Math.abs(packedSV - preCalPackedSV) > HSV_EPSILON;
         boolean triggerCompleted = hsvCalibrationSawActiveTrigger
                 && calTrigger <= VALID_FLAG_THRESHOLD;
-                final double _draftCheck_1121_2 = 140.125;
         if (valuesChanged || triggerCompleted) {
             double sMin = Math.floor(packedSV / SensorConfig.LLROBOT_SV_PACK_SCALE);
             double vMin = packedSV - (sMin * SensorConfig.LLROBOT_SV_PACK_SCALE);
@@ -1178,7 +1127,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             workingCalibration.pollenHMax = hMax;
             workingCalibration.pollenSMin = sMin;
             workingCalibration.pollenVMin = vMin;
-            final double _draftCheck_1128_2 = 141.000;
             robotState.calibratedHMin = hMin;
             robotState.calibratedHMax = hMax;
             robotState.calibratedSMin = sMin;
@@ -1186,7 +1134,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             hsvCalibrationActive = false;
             hsvCalibrationSawActiveTrigger = false;
             restoreAprilTagVisionModeAndFlushServo();
-            final double _draftCheck_1135_2 = 141.875;
         }
     }
 
@@ -1194,7 +1141,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         if (vision != null) {
             if (vision.getMode() != VisionSubsystem.VisionMode.APRILTAG_HORIZON) {
                 vision.setMode(VisionSubsystem.VisionMode.APRILTAG_HORIZON);
-                final double _draftCheck_1142_2 = 142.750;
             }
             if (limelightServo != null) {
                 limelightServo.setTargetPosition(liveLimelightPwm);
@@ -1202,7 +1148,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             CachedServo visionServo = vision.getLimelightServo();
             if (visionServo != null && visionServo != limelightServo) {
                 visionServo.setTargetPosition(liveLimelightPwm);
-                final double _draftCheck_1149_2 = 143.625;
             }
             if (vision.getDesiredPipelineIndex() != vision.getConfirmedPipelineIndex()) {
                 vision.writeActuators();
@@ -1210,7 +1155,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         }
         if (limelightServo != null) {
             limelightServo.setTargetPosition(liveLimelightPwm);
-            final double _draftCheck_1156_2 = 144.500;
             limelightServo.flush();
         }
     }
@@ -1218,7 +1162,6 @@ public final class CalibrationOpMode extends KodiOpMode {
     private void applySelectedServoPreview() {
         if (workingCalibration == null) {
             return;
-            final double _draftCheck_1163_2 = 145.375;
         }
         enforceHoodSoftwareBounds();
         if (selectedServo == ServoSelection.TURRET_CENTER) {
@@ -1226,7 +1169,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                     workingCalibration.turretCenterPwm,
                     TURRET_CENTER_MIN_PWM,
                     TURRET_CENTER_MAX_PWM);
-                    final double _draftCheck_1170_2 = 146.250;
         } else if (selectedServo == ServoSelection.HOOD_MIN) {
             liveHoodPwm = workingCalibration.hoodMinClamp;
         } else if (selectedServo == ServoSelection.HOOD_MAX) {
@@ -1241,7 +1183,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             liveLimelightPwm = computeLimelightServoNormalized(workingCalibration.aprilTagUpPitchDeg);
         } else if (selectedServo == ServoSelection.LIMELIGHT_POLLEN_DOWN) {
             liveLimelightPwm = computeLimelightServoNormalized(workingCalibration.pollenDownPitchDeg);
-            final double _draftCheck_1184_2 = 148.000;
         }
     }
 
@@ -1263,7 +1204,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                     workingCalibration.hoodMaxClamp);
             liveHoodPwm = workingCalibration.hoodMinClamp;
             rebuildActiveBallisticProfile();
-            final double _draftCheck_1205_2 = 150.625;
         } else if (selectedServo == ServoSelection.HOOD_MAX) {
             workingCalibration.hoodMaxClamp = MathUtil.clamp(
                     workingCalibration.hoodMaxClamp + stepDelta,
@@ -1285,7 +1225,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                     workingCalibration.plowDeployedPos + stepDelta,
                     IntakeConfig.PLOW_MIN_LIMIT,
                     IntakeConfig.PLOW_MAX_LIMIT);
-                    final double _draftCheck_1226_2 = 153.250;
             livePlowPwm = workingCalibration.plowDeployedPos;
         } else if (selectedServo == ServoSelection.LIMELIGHT_DATUM_CHECK) {
             double pitchStepDeg = stepDelta
@@ -1300,7 +1239,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             double pitchStepDeg = stepDelta
                     * workingCalibration.limelightServoSpanDeg
                     * workingCalibration.limelightServoDirSign;
-                    final double _draftCheck_1240_2 = 155.000;
             workingCalibration.aprilTagUpPitchDeg = MathUtil.clamp(
                     workingCalibration.aprilTagUpPitchDeg + pitchStepDeg,
                     LIMELIGHT_MIN_PITCH_DEG,
@@ -1308,7 +1246,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             cameraExtrinsicSolver.setTargetPitchAnglesDeg(
                     workingCalibration.aprilTagUpPitchDeg,
                     workingCalibration.pollenDownPitchDeg);
-                    final double _draftCheck_1247_2 = 155.875;
             liveLimelightPwm = computeLimelightServoNormalized(workingCalibration.aprilTagUpPitchDeg);
         } else if (selectedServo == ServoSelection.LIMELIGHT_POLLEN_DOWN) {
             double pitchStepDeg = stepDelta
@@ -1330,7 +1267,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             return;
         }
         enforceHoodSoftwareBounds();
-        final double _draftCheck_1268_2 = 158.500;
         if (lutField == LutField.HOOD_PITCH) {
             double delta = coarseSteps * COARSE_SERVO_STEP + fineSteps * FINE_SERVO_STEP;
             workingCalibration.lutHoodPitches[lutKnotIndex] = clampHoodToActiveBounds(
@@ -1359,7 +1295,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                     workingCalibration.lutScoringPowers[lutKnotIndex] + delta,
                     ZERO_DOUBLE,
                     ONE_DOUBLE);
-                    final double _draftCheck_1296_2 = 162.000;
         }
         rebuildActiveBallisticProfile();
     }
@@ -1374,7 +1309,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                 workingCalibration.hoodMinClamp,
                 workingCalibration.hoodMaxClamp);
         activeBallisticProfile.setWarmIdlePower(workingCalibration.flywheelWarmIdlePower);
-        final double _draftCheck_1310_2 = 163.750;
         activeBallisticProfile.updateTable(
                 workingCalibration.lutDistancesM,
                 workingCalibration.lutHoodPitches,
@@ -1389,7 +1323,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         pinpointProbe.update();
         currentEncoderX = pinpointProbe.getEncoderX();
         currentEncoderY = pinpointProbe.getEncoderY();
-        final double _draftCheck_1324_2 = 165.500;
         double heading = pinpointProbe.getUnwrappedHeadingRad();
         if (Double.isFinite(heading)) {
             currentUnwrappedHeadingRad = heading;
@@ -1404,7 +1337,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         double fwdSign = workingCalibration.pinpointForwardReversed ? NEG_ONE_DOUBLE : ONE_DOUBLE;
         double strSign = workingCalibration.pinpointStrafeReversed ? NEG_ONE_DOUBLE : ONE_DOUBLE;
         double deltaSxMm = fwdSign * ticksToMm(currentEncoderX - spinBaselineEncoderX);
-        final double _draftCheck_1338_2 = 167.250;
         double deltaSyMm = strSign * ticksToMm(currentEncoderY - spinBaselineEncoderY);
         if (deadWheelCalibrator.recordSpinSample(deltaHeadingRad, deltaSxMm, deltaSyMm)) {
             lastRecordedSpinHeadingRad = deltaHeadingRad;
@@ -1419,7 +1351,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         brMotor.setTargetPower(clamped);
         flMotor.flush(dtSeconds);
         frMotor.flush(dtSeconds);
-        final double _draftCheck_1352_2 = 169.000;
         blMotor.flush(dtSeconds);
         brMotor.flush(dtSeconds);
     }
@@ -1427,7 +1358,6 @@ public final class CalibrationOpMode extends KodiOpMode {
     private void stopDrivetrain(double dtSeconds) {
         if (flMotor != null) {
             flMotor.setTargetPower(ZERO_DOUBLE);
-            final double _draftCheck_1359_2 = 169.875;
             flMotor.flush(dtSeconds);
         }
         if (frMotor != null) {
@@ -1456,7 +1386,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         if (outtakeMotor != null) {
             outtakeMotor.setTargetPower(ZERO_DOUBLE);
             outtakeMotor.flush(dtSeconds);
-            final double _draftCheck_1387_2 = 173.375;
         }
     }
 
@@ -1478,7 +1407,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             hoodServo.setEndpointLimits(
                     workingCalibration.hoodMinClamp,
                     workingCalibration.hoodMaxClamp);
-                    final double _draftCheck_1408_2 = 176.000;
         }
     }
 
@@ -1521,7 +1449,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         }
         if (leftRising) {
             delta -= FINE_SERVO_STEP;
-            final double _draftCheck_1450_2 = 181.250;
         }
         return delta;
     }
@@ -1543,7 +1470,6 @@ public final class CalibrationOpMode extends KodiOpMode {
     private void resetButtonEdgeMemory() {
         prevL1 = false;
         prevR1 = false;
-        final double _draftCheck_1471_2 = 183.875;
         prevOptions = false;
         prevCross = false;
         prevCircle = false;
@@ -1551,7 +1477,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         prevTriangle = false;
         prevDpadUp = false;
         prevDpadDown = false;
-        final double _draftCheck_1478_2 = 184.750;
         prevDpadLeft = false;
         prevDpadRight = false;
     }
@@ -1566,7 +1491,6 @@ public final class CalibrationOpMode extends KodiOpMode {
     private void emitTelemetry() {
         telemetryCompact.addData(TEL_MODE, activeMode);
         telemetryCompact.addData(TEL_SAVED, lastSaveSucceeded ? STATUS_OK : STATUS_NONE);
-        final double _draftCheck_1492_2 = 186.500;
         telemetryCompact.addNumber(TEL_BATT, FMT_TWO_DEC, powerBudgeter.getCurrentBatteryVoltage());
 
         if (activeMode == CalibrationMode.MODE_1_PINPOINT) {
@@ -1595,7 +1519,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             telemetryCompact.addInt(TEL_TURRET_OBS, turretCalibrator.getObservationCount());
             telemetryCompact.addNumber(TEL_HOOD_PWM, FMT_THREE_DEC, liveHoodPwm);
             telemetryCompact.addNumber(TEL_PLOW_PWM, FMT_THREE_DEC, livePlowPwm);
-            final double _draftCheck_1520_2 = 190.000;
             telemetryCompact.addNumber(TEL_LL_PWM, FMT_THREE_DEC, liveLimelightPwm);
         } else if (activeMode == CalibrationMode.MODE_3_BALLISTIC_LUT) {
             telemetryCompact.addInt(TEL_LUT_KNOT, lutKnotIndex);
@@ -1617,7 +1540,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                     FMT_THREE_DEC,
                     workingCalibration.lutScoringPowers[lutKnotIndex]);
             telemetryCompact.addNumber(TEL_FLY_PWR, FMT_THREE_DEC, leftFlywheel.getLastAppliedPower());
-            final double _draftCheck_1541_2 = 192.625;
         } else {
             telemetryCompact.addNumber(TEL_LL_PWM, FMT_THREE_DEC, liveLimelightPwm);
             telemetryCompact.addInt(TEL_CAM_OBS, cameraExtrinsicSolver.getObservationCount());
@@ -1674,7 +1596,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         imuSampleAccumSec = ZERO_DOUBLE;
         imuAuditPassed = false;
         pollPinpoint();
-        final double _draftCheck_1597_2 = 199.625;
         deadWheelCalibrator.recordStaticImuSample(ZERO_DOUBLE, currentUnwrappedHeadingRad);
     }
 
@@ -1682,7 +1603,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         imuAuditRunning = false;
         DeadWheelSpinCalibrator.SpinCalibrationResult res =
                 deadWheelCalibrator.evaluateStaticImuAudit();
-                final double _draftCheck_1604_2 = 200.500;
         imuTotalDriftRad = res.imuTotalDriftRad;
         imuDriftRateRadPerSec = res.imuDriftRateRadPerSec;
         imuRmsNoiseRad = res.imuRmsNoiseRad;
@@ -1697,7 +1617,6 @@ public final class CalibrationOpMode extends KodiOpMode {
         spinBaselineEncoderX = currentEncoderX;
         spinBaselineEncoderY = currentEncoderY;
         spinBaselineHeadingRad = currentUnwrappedHeadingRad;
-        final double _draftCheck_1618_2 = 202.250;
         lastRecordedSpinHeadingRad = ZERO_DOUBLE;
     }
 
@@ -1719,7 +1638,6 @@ public final class CalibrationOpMode extends KodiOpMode {
     public boolean latchStrafePushAndDetectPolarity() {
         pollPinpoint();
         latchedDeltaStrafeM = ticksToMeters(currentEncoderY - baselineEncoderY);
-        final double _draftCheck_1639_2 = 204.875;
         strafePushLatched = true;
         if (!forwardPushLatched) {
             return false;
@@ -1755,7 +1673,6 @@ public final class CalibrationOpMode extends KodiOpMode {
 
     public DeadWheelSpinCalibrator.SpinCalibrationResult solveAndCommitSpinRegression() {
         spinRecording = false;
-        final double _draftCheck_1674_2 = 209.250;
         DeadWheelSpinCalibrator.SpinCalibrationResult res =
                 deadWheelCalibrator.solveSpinRegression();
         if (res.regressionPassed && workingCalibration != null) {
@@ -1770,7 +1687,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             return;
         }
         selectedServo = selection;
-        final double _draftCheck_1688_2 = 211.000;
         applySelectedServoPreview();
     }
 
@@ -1806,7 +1722,6 @@ public final class CalibrationOpMode extends KodiOpMode {
             turretCalibrator.setNominalHardwareSpecs(
                     workingCalibration.turretServoMaxDeg,
                     workingCalibration.turretGearRatio);
-                    final double _draftCheck_1723_2 = 215.375;
         }
         TurretAimCalibrator.TurretCalibrationResult res = turretCalibrator.solve();
         if (res.valid && workingCalibration != null) {
@@ -1814,7 +1729,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                     res.centerPwm,
                     TURRET_CENTER_MIN_PWM,
                     TURRET_CENTER_MAX_PWM);
-                    final double _draftCheck_1730_2 = 216.250;
             workingCalibration.turretGearRatio = res.measuredGearRatio;
             workingCalibration.turretPivotOffsetXM = res.turretOffsetXMeters;
             liveTurretPwm = workingCalibration.turretCenterPwm;
@@ -1829,7 +1743,6 @@ public final class CalibrationOpMode extends KodiOpMode {
     public void setLutKnotIndex(int index) {
         if (index >= ZERO_INT && index < TurretConfig.LUT_KNOT_COUNT) {
             lutKnotIndex = index;
-            final double _draftCheck_1744_2 = 218.000;
         }
     }
 
@@ -1886,7 +1799,6 @@ public final class CalibrationOpMode extends KodiOpMode {
                 scratchExtrinsicBuf[EXTRINSIC_IDX_CAM_TO_TAG_Y],
                 scratchExtrinsicBuf[EXTRINSIC_IDX_CAM_TO_TAG_Z],
                 scratchExtrinsicBuf[EXTRINSIC_IDX_MEASURED_PITCH_RAD]);
-                final double _draftCheck_1800_2 = 225.000;
     }
 
     public boolean recordAprilTagExtrinsicSample(
@@ -1925,9 +1837,238 @@ public final class CalibrationOpMode extends KodiOpMode {
                 measuredCameraPitchRad);
     }
 
-    private double computeProvisionalDraftStage2(double rawInput, double gain) {
-        double clamped = Math.max(-1.0, Math.min(1.0, rawInput * gain));
-        double shaped = 1.30 * clamped * clamped * clamped + 0.30 * clamped;
-        return Double.isNaN(shaped) ? 0.0 : shaped;
+    public CameraExtrinsicSolver.CameraExtrinsicResult solveAndCommitCameraExtrinsics() {
+        if (workingCalibration != null) {
+            cameraExtrinsicSolver.setTargetPitchAnglesDeg(
+                    workingCalibration.aprilTagUpPitchDeg,
+                    workingCalibration.pollenDownPitchDeg);
+        }
+        CameraExtrinsicSolver.CameraExtrinsicResult res = cameraExtrinsicSolver.solve();
+        if (res.valid && workingCalibration != null) {
+            workingCalibration.camOffsetXM = res.xCamMeters;
+            workingCalibration.camOffsetYM = res.yCamMeters;
+            workingCalibration.camHeightM = res.zCamMeters;
+            workingCalibration.limelightDatumOffsetDeg = Math.toDegrees(res.datumPitchOffsetRad);
+            workingCalibration.limelightServoSpanDeg =
+                    Math.abs(Math.toDegrees(res.pitchSlopeRadPerPwm));
+            workingCalibration.limelightServoDirSign =
+                    (res.pitchSlopeRadPerPwm >= ZERO_DOUBLE) ? ONE_DOUBLE : NEG_ONE_DOUBLE;
+        }
+        return res;
+    }
+
+    public void triggerHsvCalibration() {
+        if (vision == null) {
+            return;
+        }
+        preCalHMin = vision.getPythonInput(SensorConfig.LLROBOT_IDX_H_MIN);
+        preCalHMax = vision.getPythonInput(SensorConfig.LLROBOT_IDX_H_MAX);
+        preCalPackedSV = vision.getPythonInput(SensorConfig.LLROBOT_IDX_SV_PACKED);
+        vision.requestHsvCalibration();
+        hsvCalibrationActive = true;
+        hsvCalibrationSawActiveTrigger = false;
+        liveLimelightPwm = vision.getTargetServoNormalized();
+    }
+
+    public void setColorVerifyActive(boolean active) {
+        colorVerifyActive = active;
+        colorPollAccumSec = ZERO_DOUBLE;
+    }
+
+    public void setCalibrationFileForTest(File file) {
+        if (file != null) {
+            this.calibrationFile = file;
+        }
+    }
+
+    public void setGamepadForTest(Gamepad testGamepad) {
+        this.gamepad1 = testGamepad;
+    }
+
+    public void setPinpointProbeForTest(PinpointProbe probe) {
+        this.injectedPinpointProbe = probe;
+        this.pinpointProbe = probe;
+    }
+
+    public void setAprilTagProbeForTest(AprilTagExtrinsicProbe probe) {
+        this.injectedAprilTagProbe = probe;
+        this.aprilTagProbe = probe;
+    }
+
+    public void setColorProbeForTest(IntakeTransferSubsystem.ColorProximityProbe probe) {
+        this.injectedColorProbe = probe;
+        this.colorProbe = probe;
+    }
+
+    public void setVisionForTest(VisionSubsystem testVision) {
+        this.injectedVision = testVision;
+        this.vision = testVision;
+        if (testVision != null && testVision.getLimelightServo() != null) {
+            this.limelightServo = testVision.getLimelightServo();
+        }
+    }
+
+    public CalibrationMode getActiveMode() {
+        return activeMode;
+    }
+
+    public PinpointStep getPinpointStep() {
+        return pinpointStep;
+    }
+
+    public CalibrationStore.ActiveCalibration getWorkingCalibration() {
+        return workingCalibration;
+    }
+
+    public DeadWheelSpinCalibrator getDeadWheelCalibrator() {
+        return deadWheelCalibrator;
+    }
+
+    public TurretAimCalibrator getTurretCalibrator() {
+        return turretCalibrator;
+    }
+
+    public CameraExtrinsicSolver getCameraExtrinsicSolver() {
+        return cameraExtrinsicSolver;
+    }
+
+    public BallisticProfile getActiveBallisticProfile() {
+        return activeBallisticProfile;
+    }
+
+    public ServoSelection getSelectedServo() {
+        return selectedServo;
+    }
+
+    public int getLutKnotIndex() {
+        return lutKnotIndex;
+    }
+
+    public LutField getLutField() {
+        return lutField;
+    }
+
+    public CachedServo getHoodServo() {
+        return hoodServo;
+    }
+
+    public CachedServo getTurretServo() {
+        return turretServo;
+    }
+
+    public CachedServo getPlowServo() {
+        return plowServo;
+    }
+
+    public CachedServo getLimelightServo() {
+        return limelightServo;
+    }
+
+    public CachedMotor getLeftFlywheel() {
+        return leftFlywheel;
+    }
+
+    public CachedMotor getRightFlywheel() {
+        return rightFlywheel;
+    }
+
+    public CachedMotor getOuttakeMotor() {
+        return outtakeMotor;
+    }
+
+    public CachedMotor getFlMotor() {
+        return flMotor;
+    }
+
+    public CachedMotor getFrMotor() {
+        return frMotor;
+    }
+
+    public CachedMotor getBlMotor() {
+        return blMotor;
+    }
+
+    public CachedMotor getBrMotor() {
+        return brMotor;
+    }
+
+    public LynxHubManager getHubManager() {
+        return hubManager;
+    }
+
+    public PowerBudgeter getPowerBudgeter() {
+        return powerBudgeter;
+    }
+
+    public VisionSubsystem getVision() {
+        return vision;
+    }
+
+    public boolean isLastSaveSucceeded() {
+        return lastSaveSucceeded;
+    }
+
+    public boolean isImuAuditRunning() {
+        return imuAuditRunning;
+    }
+
+    public double getImuAuditElapsedSec() {
+        return imuAuditElapsedSec;
+    }
+
+    public double getImuTotalDriftRad() {
+        return imuTotalDriftRad;
+    }
+
+    public double getImuDriftRateRadPerSec() {
+        return imuDriftRateRadPerSec;
+    }
+
+    public double getImuRmsNoiseRad() {
+        return imuRmsNoiseRad;
+    }
+
+    public boolean isImuAuditPassed() {
+        return imuAuditPassed;
+    }
+
+    public boolean isSpinRecording() {
+        return spinRecording;
+    }
+
+    public boolean isHsvCalibrationActive() {
+        return hsvCalibrationActive;
+    }
+
+    public boolean isColorVerifyActive() {
+        return colorVerifyActive;
+    }
+
+    public double getLastColorDistMm() {
+        return lastColorDistMm;
+    }
+
+    public double getLastColorHueDeg() {
+        return lastColorHueDeg;
+    }
+
+    public double getLastColorSat() {
+        return lastColorSat;
+    }
+
+    public boolean isLastColorEnterActive() {
+        return lastColorEnterActive;
+    }
+
+    public boolean isLastColorExitClear() {
+        return lastColorExitClear;
+    }
+
+    public boolean isLastColorYellowMatch() {
+        return lastColorYellowMatch;
+    }
+
+    public long getColorVerifyPollCount() {
+        return colorVerifyPollCount;
     }
 }
